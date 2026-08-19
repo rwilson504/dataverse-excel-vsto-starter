@@ -1039,3 +1039,22 @@
   colours and theming. Mutation-checked by dropping `UseVisualStyleBackColor` - it fails.
 - Lesson: **three rounds of plausible reasoning lost to one round of measurement.** When a
   value is not doing what is expected, print the value before theorising about the mechanism.
+
+- Prompts: 30
+- Summary: The pane kept showing "Not connected" after connecting through its own Connections
+  dialog. Two defects, both in the pane rather than the manager (the manager is a single static
+  instance shared by pane, ribbon and dialog, and `IsConnected` is a live read).
+- **`InvokeRequired` is false whenever the handle does not exist**, whatever thread is asking.
+  `ConnectAsync` awaits with `ConfigureAwait(false)` throughout, so `ConnectionChanged` is
+  raised on a thread-pool thread - which means the guard was not the rare path but the usual
+  one, and a pane without a window would have updated its controls cross-thread. Now checks
+  `IsHandleCreated` first and refreshes from `OnHandleCreated` to catch up.
+- `OnConnections` opened a dialog that can connect or disconnect and then trusted the event to
+  have arrived. It now re-reads state after `ShowDialog` returns. A surface that owns a dialog
+  which changes state should re-read that state when it closes, event or no event.
+- `verify-pane-control.ps1` grew a no-window case: it constructs a pane, asserts the handle
+  really is absent (otherwise the test proves nothing), and invokes `OnConnectionChanged`
+  through reflection to confirm it neither throws nor touches controls.
+- Not isolated: which of the two paths was actually failing in Excel. Both are genuine, both are
+  fixed, and the guard covers the one that could fail silently - but the exact mechanism was
+  reasoned from the code, not observed. Said plainly rather than claimed as diagnosed.

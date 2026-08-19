@@ -74,6 +74,27 @@ try {
     }
 
     $host_.Dispose()
+
+    # A pane that has no window yet still receives ConnectionChanged: the manager raises it from
+    # the thread pool, where InvokeRequired reports false and the update would go cross-thread.
+    $detached = New-Object DataverseAddIn.WinForms.DataversePaneControl($manager)
+    $handler = $detached.GetType().GetMethod('OnConnectionChanged', $private)
+
+    'no window    : handle created={0}' -f $detached.IsHandleCreated
+
+    if ($detached.IsHandleCreated) {
+        throw 'Test is not exercising the no-window case: the control already has a handle.'
+    }
+
+    try {
+        $handler.Invoke($detached, @($null, [EventArgs]::Empty))
+        'no window    : ConnectionChanged handled without touching controls'
+    }
+    catch {
+        throw "REGRESSION: ConnectionChanged threw with no window: $($_.Exception.InnerException.Message)"
+    }
+
+    $detached.Dispose()
 }
 finally {
     Remove-Item $temp -Recurse -Force -ErrorAction SilentlyContinue

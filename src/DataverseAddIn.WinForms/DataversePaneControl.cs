@@ -141,10 +141,26 @@ namespace DataverseAddIn.WinForms
         {
             using (var dialog = new ConnectionManagerForm(_manager))
                 dialog.ShowDialog(this);
+
+            // The dialog can connect or disconnect, so re-read state rather than trusting that
+            // the event reached us while it was open.
+            Refresh();
+        }
+
+        /// <summary>Catches up on anything that changed while this control had no window.</summary>
+        protected override void OnHandleCreated(EventArgs e)
+        {
+            base.OnHandleCreated(e);
+            Refresh();
         }
 
         private void OnConnectionChanged(object sender, EventArgs e)
         {
+            // InvokeRequired is false whenever the handle does not exist, whatever the thread,
+            // so without this the update would touch these controls from the thread pool.
+            // ConnectAsync completes there, so that is the usual case rather than the rare one.
+            if (!IsHandleCreated) return;
+
             if (InvokeRequired)
             {
                 BeginInvoke(new Action(Refresh));
