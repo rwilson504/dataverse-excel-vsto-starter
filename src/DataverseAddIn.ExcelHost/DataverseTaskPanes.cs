@@ -54,7 +54,29 @@ namespace DataverseAddIn.ExcelHost
             // Office ignores Width while the pane is hidden — set in Create it opened at the
             // minimum instead. Only for a new pane, so a user's own resize survives reopening.
             // Not in a VisibleChanged handler: setting Width there throws COMException.
-            if (isNew && visible) pane.Width = DefaultWidthInPoints;
+            if (isNew && visible) ApplyDefaultWidth(pane);
+        }
+
+        /// <summary>
+        /// Reports rather than throws: Office swallows exceptions raised in ribbon callbacks, so
+        /// a pane that opened at the wrong size would otherwise give no clue why.
+        /// </summary>
+        private void ApplyDefaultWidth(CustomTaskPane pane)
+        {
+            try
+            {
+                pane.Width = DefaultWidthInPoints;
+
+                if (pane.Width < DefaultWidthInPoints)
+                {
+                    Report($"Excel set the pane to {pane.Width} points, not the {DefaultWidthInPoints} " +
+                           "requested — it may be restoring a remembered width.");
+                }
+            }
+            catch (Exception ex)
+            {
+                Report($"Could not set the pane width: {ex.GetType().Name}: {ex.Message}");
+            }
         }
 
         /// <summary>Writes to the pane's log if it exists, so callers need not care whether it is open.</summary>

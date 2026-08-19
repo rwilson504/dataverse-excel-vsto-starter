@@ -34,7 +34,17 @@ namespace DataverseAddIn.ExcelHost
 
         public void OnTogglePane(Office.IRibbonControl control, bool pressed)
         {
-            ThisAddIn.TaskPanes.Show(pressed);
+            // Office discards exceptions thrown in ribbon callbacks, so nothing here may escape
+            // silently — a failed toggle would look like a button that simply does nothing.
+            try
+            {
+                ThisAddIn.TaskPanes.Show(pressed);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message, "Dataverse pane", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+
             _ribbon.InvalidateControl("btnPane");
         }
 
