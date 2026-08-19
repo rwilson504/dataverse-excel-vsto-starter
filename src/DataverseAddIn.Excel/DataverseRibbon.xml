@@ -18,6 +18,14 @@
                   screentip="Run WhoAmI against the active connection"
                   getEnabled="GetWhoAmIEnabled"
                   onAction="OnWhoAmI" />
+          <toggleButton id="btnPane"
+                        label="Dataverse pane"
+                        size="large"
+                        imageMso="ViewTaskPane"
+                        screentip="Show or hide the Dataverse task pane"
+                        supertip="A dockable panel showing the active connection, with the same actions as this tab."
+                        getPressed="GetPaneVisible"
+                        onAction="OnTogglePane" />
         </group>
       </tab>
     </tabs>

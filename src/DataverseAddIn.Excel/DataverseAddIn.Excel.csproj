@@ -194,6 +194,7 @@
   -->
   <ItemGroup>
     <Compile Include="DataverseRibbon.cs" />
+    <Compile Include="DataverseTaskPanes.cs" />
     <Compile Include="Properties\AssemblyInfo.cs">
       <SubType>Code</SubType>
     </Compile>

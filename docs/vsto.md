@@ -131,6 +131,50 @@ The rules that follow:
   previous one. Use `Clone()` for parallel work rather than sharing one instance.
 - `Ingest` blocks by design — call it from a background thread.
 
+## The task pane
+
+Yes, VSTO has a dockable, poppable-out panel — the **custom task pane**. It hosts an ordinary
+WinForms `UserControl`, docks left/right/top/bottom, and the user can drag it out to float.
+
+`DataversePaneControl` lives in `DataverseAddIn.WinForms` and is host-agnostic; only
+`DataverseTaskPanes` in the add-in knows about Office.
+
+```csharp
+var pane = Globals.ThisAddIn.CustomTaskPanes.Add(control, "Dataverse", window);
+pane.DockPosition = Office.MsoCTPDockPosition.msoCTPDockPositionRight;
+pane.Width = 320;
+pane.Visible = true;
+```
+
+Four things that are not obvious:
+
+- **A pane belongs to one document frame window** and is visible only while that window is.
+  Excel 2013 and later give every workbook its own window, so a single pane vanishes when the
+  user switches workbooks. `DataverseTaskPanes` therefore keeps one pane per window, keyed by
+  `Window.Hwnd`, and creates it on demand.
+- **Panes start hidden and Office gives no way to reopen one.** If the user closes it with the
+  X, it is gone unless you provide a control. That is why the ribbon has a `toggleButton` with
+  `getPressed` — the documented pattern for keeping the two in sync.
+- **Do not call `Remove` or `RemoveAt` in `ThisAddIn_Shutdown`.** The VSTO runtime disposes the
+  panes first, so removing them there throws `ObjectDisposedException`. Clean up while the
+  add-in is still running instead — here, when a workbook is deactivated.
+- **`Width` only applies when docked left or right**, and height only when docked top or
+  bottom.
+
+### The alias trap this hit immediately
+
+The idiomatic `using Excel = Microsoft.Office.Interop.Excel;` **does not work in this project**.
+The add-in's own namespace is `DataverseAddIn.Excel`, and the enclosing `Excel` segment shadows
+the alias, so `Excel.Window` binds to `DataverseAddIn.Excel.Window` and fails with:
+
+```
+error CS0234: The type or namespace name 'Window' does not exist in the
+namespace 'DataverseAddIn.Excel'
+```
+
+Use a name that cannot collide — `ExcelInterop` here. Renaming the project namespace does not
+help while its last segment is still `Excel`.
+
 ## What the VSTO template does not do for you
 
 Already applied to `DataverseAddIn.Excel`, and each one is a build or runtime failure if

@@ -741,3 +741,32 @@
   click path had to be invoked through reflection instead.
 - New checks pinned: a failing test shows the reason and **leaves OK enabled** - a failed
   test must not wedge the dialog.
+
+- Prompts: 15
+- Summary: Added a **VSTO custom task pane** (yes, VSTO supports dockable/floating panels) and
+  recorded the **origin story** in the README. 176 tests still pass; the VSTO project builds
+  clean under VS 2019 MSBuild.
+- Origin story: a friend, **Tim**, asked whether Entra ID app registrations are the same across
+  clouds - he was building something similar. The answer (GCC = public Entra, GCC High/DoD =
+  Entra Government, so a commercial registration is invisible there) is precisely why the
+  cloud/identity split is modelled so carefully in this codebase. README now opens with that,
+  and frames the decision records as the long-form version of the reply.
+- Task pane shape: `DataversePaneControl` is a plain `UserControl` in `DataverseAddIn.WinForms`
+  (host-agnostic); `DataverseTaskPanes` in the add-in is the only Office-aware part. Ribbon
+  gains a `toggleButton` with `getPressed`, the documented way to keep pane and button in sync.
+- Four non-obvious VSTO facts, all from the Microsoft docs rather than memory:
+  - A pane is bound to **one document frame window**. Excel 2013+ is SDI, so one pane per
+    workbook window, keyed by `Window.Hwnd`, created on demand - otherwise it vanishes when
+    the user switches workbooks.
+  - Panes start hidden and Office provides **no way to reopen** a closed one; you must supply
+    the control.
+  - **Never `Remove`/`RemoveAt` in `ThisAddIn_Shutdown`** - the runtime disposes panes first
+    and it throws `ObjectDisposedException`. Cleanup happens on workbook deactivate instead.
+  - `Width` only applies when docked left/right.
+- **The alias trap predicted in the docs actually bit.** `using Excel = Microsoft.Office.Interop.Excel;`
+  does not compile in this project: the namespace `DataverseAddIn.Excel` shadows the alias, so
+  `Excel.Window` binds to `DataverseAddIn.Excel.Window` -> `CS0234`. Renaming the project
+  namespace earlier did not help because its last segment is still `Excel`. Fixed with an
+  `ExcelInterop` alias and documented in docs/vsto.md.
+- Not runtime-verified: the pane compiles and is wired, but Excel could not be launched here.
+  The per-window behaviour in particular deserves a manual check on first F5.

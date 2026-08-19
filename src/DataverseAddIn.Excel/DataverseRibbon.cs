@@ -29,6 +29,15 @@ namespace DataverseAddIn.Excel
         public bool GetWhoAmIEnabled(Office.IRibbonControl control) =>
             ThisAddIn.Connections.IsConnected;
 
+        public bool GetPaneVisible(Office.IRibbonControl control) =>
+            ThisAddIn.TaskPanes.IsVisible;
+
+        public void OnTogglePane(Office.IRibbonControl control, bool pressed)
+        {
+            ThisAddIn.TaskPanes.Show(pressed);
+            _ribbon.InvalidateControl("btnPane");
+        }
+
         public void OnConnections(Office.IRibbonControl control)
         {
             using (var dialog = new ConnectionManagerForm(ThisAddIn.Connections))

@@ -12,6 +12,9 @@ namespace DataverseAddIn.Excel
         private static readonly object ConnectionsGate = new object();
         private static DataverseConnectionManager _connections;
 
+        /// <summary>The Dataverse task pane, one per workbook window. Created on demand.</summary>
+        internal static DataverseTaskPanes TaskPanes { get; } = new DataverseTaskPanes();
+
         /// <summary>
         /// One manager for the lifetime of the add-in, so sign-in is shared. Created on first
         /// use rather than in Startup, because Office loads the ribbon and raises its OnLoad
@@ -28,6 +31,8 @@ namespace DataverseAddIn.Excel
 
         private void ThisAddIn_Startup(object sender, EventArgs e)
         {
+            // Panes belong to a window; when its workbook closes the pane must go with it.
+            Application.WorkbookDeactivate += workbook => TaskPanes.ReleaseClosedWindows();
         }
 
         private void ThisAddIn_Shutdown(object sender, EventArgs e)

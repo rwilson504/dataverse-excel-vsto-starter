@@ -16,6 +16,35 @@ Targets **.NET Framework 4.6.2**, matching the Dataverse SDK.
 
 ---
 
+## Where this came from
+
+A friend, Tim, asked a deceptively simple question: **did I know anything about Entra ID app
+registrations, and are they the same across clouds?** He was building something along these
+lines himself.
+
+The short answer is no, and the long answer is the reason this repository exists:
+
+- **GCC** authenticates against **public** Microsoft Entra ID. Same registration as commercial,
+  same sign-in. Only the Dataverse discovery endpoint and token audience differ.
+- **GCC High** and **DoD** authenticate against **Microsoft Entra Government**, a physically
+  separate directory. A commercial registration is invisible there — "multitenant" does not
+  bridge the two.
+- So the answer to "one registration or two?" is *two*, and which two depends on the clouds
+  you target rather than on how many tenants you have.
+
+That distinction is easy to state and easy to get wrong, because GCC shares the
+`dynamics.com` suffix with commercial and is told apart only by a `crm9` region label. Sending
+GCC users to `login.microsoftonline.us` is the classic mistake.
+
+Answering Tim properly meant proving it rather than asserting it — which turned into
+[a way to probe an environment with no credentials at all](docs/authentication.md#probing-an-environment-without-credentials),
+then a working multi-cloud discovery client, then the rest of this. The
+[decision records](decisions) are essentially the long-form version of that reply, and the
+cloud/identity split is why authentication is modelled so carefully here rather than being a
+single `ClientId` constant.
+
+---
+
 ## The three decisions that shape everything
 
 Read these before the code; they explain most of what would otherwise look odd.
