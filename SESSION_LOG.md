@@ -770,3 +770,32 @@
   `ExcelInterop` alias and documented in docs/vsto.md.
 - Not runtime-verified: the pane compiles and is wired, but Excel could not be launched here.
   The per-window behaviour in particular deserves a manual check on first F5.
+
+- Prompts: 16
+- Summary: **Renamed `DataverseAddIn.Excel` to `DataverseAddIn.ExcelHost`** and documented the
+  rule. A namespace segment shadows a using-alias of the same name, so
+  `using Excel = Microsoft.Office.Interop.Excel;` was silently ignored inside
+  `namespace DataverseAddIn.Excel` and `Excel.Window` bound to `DataverseAddIn.Excel.Window`.
+  18 files rewritten, folder/csproj/pfx moved with `git mv`, VSTO rebuild clean, 176 tests
+  pass, 36 doc links resolve.
+- **Why rename rather than keep the `ExcelInterop` workaround:** in a normal project the alias
+  convention is fine. In a *template* it is a recurring tax - nearly every Office sample uses
+  `Excel.Range` / `Excel.Worksheet` / `Excel.Workbook`, so every paste fails with a `CS0234`
+  that never mentions aliases. A starter should model the practice, not the trap.
+- Name chosen for consistency with the existing `Samples.ConsoleHost` / `Samples.WinFormsHost`
+  vocabulary. **Only the last segment matters** - `DataverseAddIn.Host.Excel` would still
+  collide. `Office` is the same trap, since the ribbon aliases `Microsoft.Office.Core`.
+- Proof the fix works: `DataverseTaskPanes` now uses the plain `Excel` alias and compiles.
+  Had I only renamed and not reverted the alias, nothing would have been demonstrated.
+- Three things had to move together or the build breaks confusingly: `RootNamespace`, the
+  `GetResourceText("<RootNamespace>.DataverseRibbon.xml")` string, and `ManifestKeyFile`
+  (the .pfx was renamed to match). Verified all three by inspection before building.
+- Cleaned up the orphaned `HKCU:\...\Excel\Addins\DataverseAddIn.Excel` registration, which
+  pointed at a `.vsto` under the old path; MSBuild registered `DataverseAddIn.ExcelHost` on
+  the next build. Also deleted the moved-along `bin`/`obj` so two `.vsto` files did not sit in
+  one output folder.
+- Excluded `SESSION_LOG.md` from the bulk replace on purpose - it is a dated record and should
+  keep saying what was true at the time. The bulk replace *did* corrupt the explanation prose
+  in `docs/vsto.md` (it rewrote "the enclosing `Excel` segment" into `ExcelHost`, making the
+  paragraph self-contradictory); rewrote that section by hand afterwards. Worth remembering:
+  a repo-wide rename silently damages any prose that discusses the old name.

@@ -7,7 +7,7 @@ something concrete goes wrong without it.
 DataverseAddIn.Discovery ──┐
    MSAL, Global Discovery  │
    Web API. 8 DLLs.        │
-                           ├──> DataverseAddIn.Connections ──> DataverseAddIn.Excel
+                           ├──> DataverseAddIn.Connections ──> DataverseAddIn.ExcelHost
 DataverseAddIn.Ingestion ──┘       ServiceClient, credentials,      ribbon, ThisAddIn
    Microsoft.Xrm.Sdk only.         saved connections. 135 DLLs.     (the only Excel-aware
    No auth, no ServiceClient.                │                       project)
@@ -16,8 +16,12 @@ DataverseAddIn.Ingestion ──┘       ServiceClient, credentials,      ribbon
                                       dialogs, host-agnostic
 ```
 
-Dependencies point one way. Nothing under `src/` except `DataverseAddIn.Excel` knows Excel
+Dependencies point one way. Nothing under `src/` except `DataverseAddIn.ExcelHost` knows Excel
 exists, and nothing except `DataverseAddIn.WinForms` knows a UI exists.
+
+The host project is `ExcelHost` rather than `Excel` on purpose: a namespace segment shadows a
+using-alias of the same name, which breaks `using Excel = Microsoft.Office.Interop.Excel;` and
+every pasted Office sample with it. See [vsto.md](vsto.md#why-the-project-is-called-excelhost-and-not-excel).
 
 ## Why the split
 

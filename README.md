@@ -8,7 +8,7 @@ details, and enough throughput to move twenty thousand rows without an afternoon
 This is a working add-in that does all of that, and — more usefully — a record of **why each
 piece is built the way it is**, including the approaches that were tried and rejected.
 
-Fork it as a starting point. Everything under `src/` except `DataverseAddIn.Excel` is
+Fork it as a starting point. Everything under `src/` except `DataverseAddIn.ExcelHost` is
 host-agnostic, so the interesting parts move to a console app, a service, or an Azure Function
 unchanged.
 
@@ -128,7 +128,7 @@ Windows on ARM the workload only installs in VS 2019.
 | `src/DataverseAddIn.Connections` | `ServiceClient`, credentials, saved connections, secret store. |
 | `src/DataverseAddIn.Ingestion` | Bulk engine and sheet mapper. `Microsoft.Xrm.Sdk` only — testable offline, portable to any host. |
 | `src/DataverseAddIn.WinForms` | Connection manager, connection details, discovery picker. Host-agnostic. |
-| `src/DataverseAddIn.Excel` | The VSTO add-in — ribbon and `ThisAddIn`. The only Excel-aware project. |
+| `src/DataverseAddIn.ExcelHost` | The VSTO add-in — ribbon and `ThisAddIn`. The only Excel-aware project. |
 | `samples/…ConsoleHost` | Console harness for discovery and connection flows. |
 | `samples/…WinFormsHost` | Exercises the UI without Office. |
 | `tests/…Ingestion.Tests` | 18 tests: engine, sheet mapper. |

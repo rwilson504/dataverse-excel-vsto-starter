@@ -4,7 +4,7 @@ using DataverseAddIn.Connections;
 using DataverseAddIn.Discovery;
 using Office = Microsoft.Office.Core;
 
-namespace DataverseAddIn.Excel
+namespace DataverseAddIn.ExcelHost
 {
     public partial class ThisAddIn
     {
@@ -49,7 +49,7 @@ namespace DataverseAddIn.Excel
 
         /// <summary>
         /// A VSTO add-in does not read App.config; settings come from the add-in's own
-        /// DataverseAddIn.Excel.dll.config, which ConfigurationManager resolves for the loaded assembly.
+        /// DataverseAddIn.ExcelHost.dll.config, which ConfigurationManager resolves for the loaded assembly.
         /// </summary>
         private static DataverseAuthOptions BuildAuthOptions(DataverseCloud cloud)
         {

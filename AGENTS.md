@@ -24,8 +24,8 @@ CI runs the same script on `windows-latest` with `-FailOnVstoArtifacts`.
 
 ### Never run `dotnet build` on the solution
 
-The .NET CLI has no OfficeTools targets, so it fails on `DataverseAddIn.Excel` — and the
-restore writes `project.assets.json` and `*.nuget.g.*` into `src/DataverseAddIn.Excel/obj`,
+The .NET CLI has no OfficeTools targets, so it fails on `DataverseAddIn.ExcelHost` — and the
+restore writes `project.assets.json` and `*.nuget.g.*` into `src/DataverseAddIn.ExcelHost/obj`,
 after which Visual Studio fails with *"Your project file doesn't list 'win' as a
 RuntimeIdentifier"*. Adding `RuntimeIdentifiers`, which the error suggests, does not fix it;
 deleting that `obj` folder does.
@@ -102,6 +102,13 @@ plaintext and fails if anyone adds a secret-bearing property.
 **The VSTO project needs `ManifestCertificateThumbprint`.** Removing it fails with `MSB4044`.
 The signing key is not in the repository; `tools/new-signing-key.ps1` generates one and patches
 the thumbprint locally — that `.csproj` edit must not be committed.
+
+**Never name a namespace segment after a library you alias.** The add-in is
+`DataverseAddIn.ExcelHost`, not `….Excel`, because a namespace member shadows a using-alias:
+inside `namespace DataverseAddIn.Excel`, `using Excel = Microsoft.Office.Interop.Excel;` is
+silently ignored and `Excel.Range` fails with `CS0234` that never mentions aliases. `Office`
+is the same trap, since the ribbon uses `using Office = Microsoft.Office.Core;`. Only the
+**last** segment matters.
 
 ## Adding an authentication kind
 

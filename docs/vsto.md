@@ -13,12 +13,12 @@ VS 2019 — which runs emulated — is the only place it installs. That is an AR
 not a VS 2022 one: on an x64 machine, use VS 2022 and ignore every 2019-specific note below.
 Catalog presence is not the same as installable availability.
 
-The libraries under `src/` build fine with the .NET SDK; only `DataverseAddIn.Excel` needs
+The libraries under `src/` build fine with the .NET SDK; only `DataverseAddIn.ExcelHost` needs
 Visual Studio.
 
 ## Generate a signing key first
 
-The repository deliberately ships **no** `DataverseAddIn.Excel_TemporaryKey.pfx`, so a fresh
+The repository deliberately ships **no** `DataverseAddIn.ExcelHost_TemporaryKey.pfx`, so a fresh
 clone fails:
 
 ```
@@ -33,7 +33,7 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File tools\new-signing-key.ps
 
 That creates an RSA 2048 / SHA-256 code-signing certificate in `Cert:\CurrentUser\My`, exports
 it where the project expects it, and rewrites `<ManifestCertificateThumbprint>` in
-`DataverseAddIn.Excel.csproj` to match. **That `.csproj` edit is local to you — do not commit it.**
+`DataverseAddIn.ExcelHost.csproj` to match. **That `.csproj` edit is local to you — do not commit it.**
 
 The thumbprint cannot simply be deleted instead. VSTO's `ManageCertificateStore` task requires
 it:
@@ -68,8 +68,8 @@ and no `global.json` is needed.
 ```
 
 > **Never run `dotnet build` on `DataverseExcelAddIn.sln`.** The CLI has no OfficeTools
-> targets, so it fails on `DataverseAddIn.Excel` — and worse, the restore writes
-> `project.assets.json` and `*.nuget.g.*` into `src/DataverseAddIn.Excel/obj`, after which
+> targets, so it fails on `DataverseAddIn.ExcelHost` — and worse, the restore writes
+> `project.assets.json` and `*.nuget.g.*` into `src/DataverseAddIn.ExcelHost/obj`, after which
 > Visual Studio fails with *"Your project file doesn't list 'win' as a RuntimeIdentifier"*. The fix is
 > deleting that `obj` folder; adding `RuntimeIdentifiers`, which the error suggests, does not
 > help.
@@ -87,10 +87,10 @@ the .NET 10 SDK — VSTO project types are safest in `.sln`. If you regenerate i
 
 ## Running it
 
-1. Put your own `ClientId` values in `src/DataverseAddIn.Excel/app.config`. It deploys as
-   `DataverseAddIn.Excel.dll.config`; **a VSTO add-in does not read `App.config` from anywhere
+1. Put your own `ClientId` values in `src/DataverseAddIn.ExcelHost/app.config`. It deploys as
+   `DataverseAddIn.ExcelHost.dll.config`; **a VSTO add-in does not read `App.config` from anywhere
    else.**
-2. Open the solution in Visual Studio, set `DataverseAddIn.Excel` as the startup project,
+2. Open the solution in Visual Studio, set `DataverseAddIn.ExcelHost` as the startup project,
    press **F5**. Excel launches with a **Dataverse** tab containing **Connections** and
    **Who Am I**.
 
@@ -161,23 +161,53 @@ Four things that are not obvious:
 - **`Width` only applies when docked left or right**, and height only when docked top or
   bottom.
 
-### The alias trap this hit immediately
+### Why the project is called ExcelHost and not Excel
 
-The idiomatic `using Excel = Microsoft.Office.Interop.Excel;` **does not work in this project**.
-The add-in's own namespace is `DataverseAddIn.Excel`, and the enclosing `Excel` segment shadows
-the alias, so `Excel.Window` binds to `DataverseAddIn.Excel.Window` and fails with:
+The obvious name for this project is `DataverseAddIn.Excel`. It was, briefly, and it is worth
+explaining why it is not any more.
+
+**A namespace segment shadows a using-alias of the same name.** Inside
+`namespace DataverseAddIn.Excel`, the name `Excel` resolves to the *namespace*, not to an
+alias, so the idiomatic line every VSTO sample opens with:
+
+```csharp
+using Excel = Microsoft.Office.Interop.Excel;
+```
+
+quietly stops working, and `Excel.Window` fails with:
 
 ```
 error CS0234: The type or namespace name 'Window' does not exist in the
 namespace 'DataverseAddIn.Excel'
 ```
 
-Use a name that cannot collide — `ExcelInterop` here. Renaming the project namespace does not
-help while its last segment is still `Excel`.
+That error says nothing about aliases, which is what makes it expensive. And it does not fail
+once — it fails every time someone pastes a snippet using `Excel.Range`, `Excel.Worksheet` or
+`Excel.Workbook`, which is most Office sample code in existence.
+
+The workaround is a non-colliding alias (`ExcelInterop`). The fix is to not name a namespace
+segment after a library you intend to alias. Since this repository is a starting point for
+other people's add-ins, it takes the fix: the final segment is `ExcelHost`, matching the
+`ConsoleHost` / `WinFormsHost` vocabulary used by the samples, and `using Excel = …` behaves
+normally again.
+
+**The same trap is waiting for `Office`.** `DataverseRibbon.cs` uses
+`using Office = Microsoft.Office.Core;`, so a project or namespace segment named `Office`
+would break in exactly the same way. Renaming only helps if the *last* segment changes —
+`DataverseAddIn.Host.Excel` would still collide.
+
+If you rename this project in a fork, three things must move together or the build breaks in
+confusing ways: `RootNamespace`, the string passed to `GetResourceText`
+(`<RootNamespace>.DataverseRibbon.xml`), and `ManifestKeyFile`. Delete the old registry key
+afterwards, or Excel keeps loading the previous add-in from a path that no longer exists:
+
+```powershell
+Remove-Item 'HKCU:\Software\Microsoft\Office\Excel\Addins\<old name>' -Recurse
+```
 
 ## What the VSTO template does not do for you
 
-Already applied to `DataverseAddIn.Excel`, and each one is a build or runtime failure if
+Already applied to `DataverseAddIn.ExcelHost`, and each one is a build or runtime failure if
 missed:
 
 - `DataverseRibbon.xml` must be an **EmbeddedResource**, and the name passed to

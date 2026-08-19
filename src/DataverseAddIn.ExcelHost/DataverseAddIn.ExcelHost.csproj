@@ -24,8 +24,8 @@
     <ProjectGuid>{D0AF79DD-E3F1-4F40-92C8-577A6BB1A009}</ProjectGuid>
     <OutputType>Library</OutputType>
     <NoStandardLibraries>false</NoStandardLibraries>
-    <RootNamespace>DataverseAddIn.Excel</RootNamespace>
-    <AssemblyName>DataverseAddIn.Excel</AssemblyName>
+    <RootNamespace>DataverseAddIn.ExcelHost</RootNamespace>
+    <AssemblyName>DataverseAddIn.ExcelHost</AssemblyName>
     <LoadBehavior>3</LoadBehavior>
     <TargetFrameworkVersion>v4.6.2</TargetFrameworkVersion>
     <DefineConstants>VSTO40</DefineConstants>
@@ -207,7 +207,7 @@
       <AutoGen>True</AutoGen>
       <DependentUpon>Resources.resx</DependentUpon>
     </Compile>
-    <None Include="DataverseAddIn.Excel_TemporaryKey.pfx" />
+    <None Include="DataverseAddIn.ExcelHost_TemporaryKey.pfx" />
     <None Include="Properties\Settings.settings">
       <Generator>SettingsSingleFileGenerator</Generator>
       <LastGenOutput>Settings.Designer.cs</LastGenOutput>
@@ -256,7 +256,7 @@
     <SignManifests>true</SignManifests>
   </PropertyGroup>
   <PropertyGroup>
-    <ManifestKeyFile>DataverseAddIn.Excel_TemporaryKey.pfx</ManifestKeyFile>
+    <ManifestKeyFile>DataverseAddIn.ExcelHost_TemporaryKey.pfx</ManifestKeyFile>
   </PropertyGroup>
   <PropertyGroup>
     <ManifestCertificateThumbprint>D69423ACE40F29C3DACA0289766B66C9133AFC55</ManifestCertificateThumbprint>
@@ -270,7 +270,7 @@
     <VisualStudio>
       <FlavorProperties GUID="{BAA0C2D2-18E2-41B9-852F-F413020CAA33}">
         <ProjectProperties HostName="Excel" HostPackage="{29A7B9D7-A7F1-4328-8EF0-6B2D1A56B2C1}" OfficeVersion="15.0" VstxVersion="4.0" ApplicationType="Excel" Language="cs" TemplatesPath="" DebugInfoExeName="#Software\Microsoft\Office\16.0\Excel\InstallRoot\Path#excel.exe" DebugInfoCommandLine="/x" AddItemTemplatesGuid="{51063C3A-E220-4D12-8922-BDA915ACD783}" />
-        <Host Name="Excel" GeneratedCodeNamespace="DataverseAddIn.Excel" IconIndex="0">
+        <Host Name="Excel" GeneratedCodeNamespace="DataverseAddIn.ExcelHost" IconIndex="0">
           <HostItem Name="ThisAddIn" Code="ThisAddIn.cs" CanonicalName="AddIn" CanActivate="false" IconIndex="1" Blueprint="ThisAddIn.Designer.xml" GeneratedCode="ThisAddIn.Designer.cs" />
         </Host>
       </FlavorProperties>

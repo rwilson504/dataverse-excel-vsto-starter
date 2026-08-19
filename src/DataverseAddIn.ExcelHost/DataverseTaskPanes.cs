@@ -2,13 +2,10 @@ using System;
 using System.Collections.Generic;
 using DataverseAddIn.WinForms;
 using Microsoft.Office.Tools;
+using Excel = Microsoft.Office.Interop.Excel;
 using Office = Microsoft.Office.Core;
 
-// Not "Excel": this project's own namespace ends in .Excel, which shadows that alias and
-// makes Excel.Window bind to DataverseAddIn.Excel.Window.
-using ExcelInterop = Microsoft.Office.Interop.Excel;
-
-namespace DataverseAddIn.Excel
+namespace DataverseAddIn.ExcelHost
 {
     /// <summary>
     /// Owns the Dataverse custom task pane.
@@ -65,7 +62,7 @@ namespace DataverseAddIn.Excel
                 try
                 {
                     // Touching a released COM window throws; that is the signal it is gone.
-                    var _ = ((ExcelInterop.Window)entry.Value.Window).Hwnd;
+                    var _ = ((Excel.Window)entry.Value.Window).Hwnd;
                 }
                 catch (Exception)
                 {
@@ -82,7 +79,7 @@ namespace DataverseAddIn.Excel
             }
         }
 
-        private static ExcelInterop.Window ActiveWindow
+        private static Excel.Window ActiveWindow
         {
             get
             {
@@ -91,14 +88,14 @@ namespace DataverseAddIn.Excel
             }
         }
 
-        private CustomTaskPane Find(ExcelInterop.Window window)
+        private CustomTaskPane Find(Excel.Window window)
         {
             if (window == null) return null;
 
             return _panes.TryGetValue(window.Hwnd, out var pane) ? pane : null;
         }
 
-        private CustomTaskPane Create(ExcelInterop.Window window)
+        private CustomTaskPane Create(Excel.Window window)
         {
             var control = new DataversePaneControl(ThisAddIn.Connections);
 

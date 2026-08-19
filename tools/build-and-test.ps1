@@ -2,7 +2,7 @@
 #
 #   pwsh tools\build-and-test.ps1 [-Configuration Release] [-SkipDialogCheck]
 #
-# DataverseAddIn.Excel is excluded deliberately. It is a VSTO project: the .NET CLI has no
+# DataverseAddIn.ExcelHost is excluded deliberately. It is a VSTO project: the .NET CLI has no
 # OfficeTools targets, so building the solution fails, and worse, the restore writes
 # project.assets.json and *.nuget.g.* into its obj folder, after which Visual Studio's legacy
 # NuGet targets fail with "doesn't list 'win' as a RuntimeIdentifier". Build that project in
@@ -29,7 +29,7 @@ function Invoke-Step {
     if ($LASTEXITCODE -ne 0) { throw "$Description failed with exit code $LASTEXITCODE." }
 }
 
-$excluded = 'DataverseAddIn.Excel'
+$excluded = 'DataverseAddIn.ExcelHost'
 
 $projects = Get-ChildItem -Path (Join-Path $root 'src'), (Join-Path $root 'samples'), (Join-Path $root 'tests') `
     -Recurse -Filter *.csproj |

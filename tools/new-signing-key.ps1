@@ -19,8 +19,8 @@ param(
 
 $ErrorActionPreference = 'Stop'
 
-$project = Join-Path (Split-Path -Parent $PSScriptRoot) 'src\DataverseAddIn.Excel\DataverseAddIn.Excel.csproj'
-$keyPath = Join-Path (Split-Path -Parent $project) 'DataverseAddIn.Excel_TemporaryKey.pfx'
+$project = Join-Path (Split-Path -Parent $PSScriptRoot) 'src\DataverseAddIn.ExcelHost\DataverseAddIn.ExcelHost.csproj'
+$keyPath = Join-Path (Split-Path -Parent $project) 'DataverseAddIn.ExcelHost_TemporaryKey.pfx'
 
 if (-not (Test-Path $project)) { throw "Project not found: $project" }
 

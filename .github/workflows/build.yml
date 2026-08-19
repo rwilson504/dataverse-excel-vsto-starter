@@ -20,7 +20,7 @@ jobs:
         with:
           dotnet-version: '10.0.x'
 
-      # DataverseAddIn.Excel is excluded by the script: VSTO needs the Office/SharePoint
+      # DataverseAddIn.ExcelHost is excluded by the script: VSTO needs the Office/SharePoint
       # workload in Visual Studio, which hosted runners do not have. -FailOnVstoArtifacts
       # turns any restore of it into a build failure rather than a silent trap for the next
       # person to open the solution in Visual Studio.

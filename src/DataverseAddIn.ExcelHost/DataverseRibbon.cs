@@ -8,7 +8,7 @@ using DataverseAddIn.WinForms;
 using Microsoft.Crm.Sdk.Messages;
 using Office = Microsoft.Office.Core;
 
-namespace DataverseAddIn.Excel
+namespace DataverseAddIn.ExcelHost
 {
     [ComVisible(true)]
     public class DataverseRibbon : Office.IRibbonExtensibility
@@ -16,7 +16,7 @@ namespace DataverseAddIn.Excel
         private Office.IRibbonUI _ribbon;
 
         public string GetCustomUI(string ribbonId) =>
-            GetResourceText("DataverseAddIn.Excel.DataverseRibbon.xml");
+            GetResourceText("DataverseAddIn.ExcelHost.DataverseRibbon.xml");
 
         public void OnLoad(Office.IRibbonUI ribbonUi)
         {
