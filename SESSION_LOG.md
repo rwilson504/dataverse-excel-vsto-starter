@@ -1087,8 +1087,8 @@
 - Prompts: 32
 - Summary: Added file logging. The `ILogger` seam already ran end to end -
   `IDataverseCredential.CreateClientAsync` and `DataverseServiceClientFactory.CreateAsync` both
-  take one - but **every call site passed null**, so `ServiceClient`''s own HTTP, retry and auth
-  detail was being discarded. That is what turned today''s `SocketException` into four
+  take one - but **every call site passed null**, so `ServiceClient`'s own HTTP, retry and auth
+  detail was being discarded. That is what turned today's `SocketException` into four
   rebuild-and-relaunch cycles.
 - `FileLoggerProvider`: a hand-written `ILogger`/`ILoggerProvider` writing a daily file to
   `%APPDATA%\DataverseDiscovery\logs`, purging after 7 days. Hand-written rather than taking a
