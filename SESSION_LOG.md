@@ -961,3 +961,25 @@
   single `Custom` enum member fed from the file, which supports one extra cloud per user for a
   fraction of the churn.
 - No decision record written, because nothing was decided.
+
+- Prompts: 23
+- Summary: First run of the task pane in Excel found two problems: it opened very narrow, and the
+  environment URL was almost unreadable.
+- Corrected an assumption before acting on it. The obvious theory was "Width is ignored while
+  the pane is hidden", but the official example sets `Width` *before* `Visible`, so that theory
+  is unsupported. What the docs do say: **`Width` is in points, not pixels**; it throws
+  `COMException` when the pane is docked top or bottom; setting it inside a `VisibleChanged`
+  handler also throws - which rules out the workaround usually suggested for this symptom.
+  Left the ordering alone, named the constant `DefaultWidthInPoints`, and wrote the units down.
+- Legibility had two causes, both certain from reading: `_detail` used `SystemColors.GrayText`,
+  and the control inherited its background from the pane host. Now states
+  `BackColor = SystemColors.Window` and gives the URL full-contrast `ControlText` when
+  connected, keeping gray for the "not connected" hint. Added a tooltip with the full URL.
+- Both labels had `MaximumSize = new Size(260, 0)` hard-coded, so widening the pane bought no
+  extra text - the wrap width now tracks `ClientSize` in `OnResize`. That is likely part of why
+  the pane "felt" small even after being widened.
+- Built the VSTO project with VS 2019 MSBuild to confirm it compiles (`build-and-test.ps1`
+  excludes it by design), and checked `git status` afterwards for stray obj artifacts and the
+  local `ManifestCertificateThumbprint` edit. Clean.
+- Not verified: how wide 300 points actually renders, and whether Office overrides it with a
+  remembered width. Needs another F5.

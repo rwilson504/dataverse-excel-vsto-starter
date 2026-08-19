@@ -16,7 +16,8 @@ namespace DataverseAddIn.WinForms
         private readonly DataverseConnectionManager _manager;
 
         private readonly Label _environment = new Label { AutoSize = true, Font = new Font(SystemFonts.MessageBoxFont, FontStyle.Bold) };
-        private readonly Label _detail = new Label { AutoSize = true, ForeColor = SystemColors.GrayText };
+        private readonly Label _detail = new Label { AutoSize = true };
+        private readonly ToolTip _tips = new ToolTip { AutoPopDelay = 20000 };
         private readonly Button _connections = FormScaling.CreateButton("Connections...");
         private readonly Button _disconnect = FormScaling.CreateButton("Disconnect");
         private readonly TextBox _output = new TextBox
@@ -36,8 +37,10 @@ namespace DataverseAddIn.WinForms
             Dock = DockStyle.Fill;
             Padding = new Padding(8);
 
-            _environment.MaximumSize = new Size(260, 0);
-            _detail.MaximumSize = new Size(260, 0);
+            // Stated rather than inherited: a task pane host supplies its own background, and
+            // the default gray-on-gray left the environment URL unreadable.
+            BackColor = SystemColors.Window;
+
             _detail.Margin = new Padding(0, 0, 0, 8);
 
             _connections.Click += OnConnections;
@@ -76,6 +79,17 @@ namespace DataverseAddIn.WinForms
             Refresh();
         }
 
+        /// <summary>Wrapping tracks the pane, which the user can resize, rather than a fixed width.</summary>
+        protected override void OnResize(EventArgs e)
+        {
+            base.OnResize(e);
+
+            var available = Math.Max(80, ClientSize.Width - Padding.Horizontal - 4);
+
+            _environment.MaximumSize = new Size(available, 0);
+            _detail.MaximumSize = new Size(available, 0);
+        }
+
         /// <summary>Appends a line to the pane's log, so callers can report without a dialog.</summary>
         public void Report(string message)
         {
@@ -96,13 +110,20 @@ namespace DataverseAddIn.WinForms
 
                 _environment.ForeColor = Color.ForestGreen;
                 _environment.Text = profile?.Name ?? "Connected";
+
+                // Full contrast: this is the one thing on the pane worth reading carefully.
+                _detail.ForeColor = SystemColors.ControlText;
                 _detail.Text = profile?.EnvironmentUrl ?? string.Empty;
+                _tips.SetToolTip(_detail, _detail.Text);
             }
             else
             {
                 _environment.ForeColor = SystemColors.GrayText;
                 _environment.Text = "Not connected";
+
+                _detail.ForeColor = SystemColors.GrayText;
                 _detail.Text = "Choose a connection to get started.";
+                _tips.SetToolTip(_detail, string.Empty);
             }
 
             _disconnect.Enabled = _manager.IsConnected;

@@ -20,6 +20,12 @@ namespace DataverseAddIn.ExcelHost
     {
         private const string Title = "Dataverse";
 
+        /// <summary>
+        /// Wide enough for an environment URL without wrapping. Office may raise it to its own
+        /// minimum, and caps a docked pane at roughly half the screen.
+        /// </summary>
+        private const int DefaultWidthInPoints = 300;
+
         private readonly Dictionary<int, CustomTaskPane> _panes = new Dictionary<int, CustomTaskPane>();
 
         /// <summary>True when the pane for the active window is open, which drives the ribbon toggle.</summary>
@@ -101,7 +107,10 @@ namespace DataverseAddIn.ExcelHost
 
             var pane = Globals.ThisAddIn.CustomTaskPanes.Add(control, Title, window);
             pane.DockPosition = Office.MsoCTPDockPosition.msoCTPDockPositionRight;
-            pane.Width = 320;
+
+            // Width is in POINTS, not pixels, and only settable while docked left or right —
+            // setting it on a top/bottom dock throws COMException.
+            pane.Width = DefaultWidthInPoints;
 
             _panes[window.Hwnd] = pane;
 
