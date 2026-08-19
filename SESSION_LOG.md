@@ -1083,3 +1083,30 @@
   exception and both surfaces showed only `ex.Message`. `ErrorDetail.Describe` now walks the
   chain, de-duplicating repeated wrapper messages, and appends the innermost type - which is
   what identified `SocketException` here.
+
+- Prompts: 32
+- Summary: Added file logging. The `ILogger` seam already ran end to end -
+  `IDataverseCredential.CreateClientAsync` and `DataverseServiceClientFactory.CreateAsync` both
+  take one - but **every call site passed null**, so `ServiceClient`''s own HTTP, retry and auth
+  detail was being discarded. That is what turned today''s `SocketException` into four
+  rebuild-and-relaunch cycles.
+- `FileLoggerProvider`: a hand-written `ILogger`/`ILoggerProvider` writing a daily file to
+  `%APPDATA%\DataverseDiscovery\logs`, purging after 7 days. Hand-written rather than taking a
+  logging package because a VSTO add-in has to deploy every assembly it references, and
+  `ILogger` itself already arrives with the Dataverse SDK - so this costs no new dependency.
+- Defaults to `Information` deliberately. Below that the Dataverse client can log request
+  headers, and this is plain text in the user profile: the log must not become somewhere tokens
+  end up. A test pins that Trace and Debug are off by default.
+- A write that fails disables the file rather than propagating - logging must never be the
+  reason the add-in fails. Mutation-checked by removing the try/catch: exactly one test failed,
+  and it was the right one.
+- Warnings and above mirror into the pane. Subscribed **from the pane itself** rather than
+  through `DataverseTaskPanes`, because that path resolves `ActiveWindow` - a COM call - and log
+  entries arrive from whatever thread did the work. Also fixed `Report` to check
+  `IsHandleCreated`, the same ambient trap as `OnConnectionChanged`.
+- Added an "Open log folder" link, since a log the user cannot find is not much use.
+- Hit the documented VSTO trap again: NuGet references do not flow from an SDK-style project to
+  the legacy one, so `Microsoft.Extensions.Logging.Abstractions` needed an explicit `Reference`
+  with `HintPath`. AGENTS.md already warned about this; worth noting it recurs for every SDK
+  assembly newly used from the add-in project.
+- 216 tests (18 + 198), 7 new.

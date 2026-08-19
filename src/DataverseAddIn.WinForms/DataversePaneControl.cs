@@ -1,8 +1,11 @@
 using System;
+using System.Diagnostics;
 using System.Drawing;
+using System.IO;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using DataverseAddIn.Connections;
+using Microsoft.Extensions.Logging;
 
 namespace DataverseAddIn.WinForms
 {
@@ -14,6 +17,7 @@ namespace DataverseAddIn.WinForms
     public sealed class DataversePaneControl : UserControl
     {
         private readonly DataverseConnectionManager _manager;
+        private readonly FileLoggerProvider _logs;
 
         private readonly Label _environment = new Label { AutoSize = true, Font = new Font(SystemFonts.MessageBoxFont, FontStyle.Bold) };
         private readonly Label _detail = new Label { AutoSize = true };
@@ -28,10 +32,17 @@ namespace DataverseAddIn.WinForms
             ScrollBars = ScrollBars.Vertical,
             BackColor = SystemColors.Window
         };
+        private readonly LinkLabel _openLogs = new LinkLabel
+        {
+            Text = "Open log folder",
+            AutoSize = true,
+            Margin = new Padding(0, 6, 0, 0)
+        };
 
-        public DataversePaneControl(DataverseConnectionManager manager)
+        public DataversePaneControl(DataverseConnectionManager manager, FileLoggerProvider logs = null)
         {
             _manager = manager ?? throw new ArgumentNullException(nameof(manager));
+            _logs = logs;
 
             this.ApplyScaling();
             Dock = DockStyle.Fill;
@@ -64,7 +75,7 @@ namespace DataverseAddIn.WinForms
             {
                 Dock = DockStyle.Fill,
                 ColumnCount = 1,
-                RowCount = 5,
+                RowCount = 6,
                 AutoSize = true
             };
 
@@ -74,16 +85,49 @@ namespace DataverseAddIn.WinForms
             layout.Controls.Add(_connections, 0, 2);
             layout.Controls.Add(_disconnect, 0, 3);
             layout.Controls.Add(_output, 0, 4);
+            layout.Controls.Add(_openLogs, 0, 5);
 
             for (var row = 0; row < 4; row++)
                 layout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
 
             layout.RowStyles.Add(new RowStyle(SizeType.Percent, 100F));
+            layout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
 
             Controls.Add(layout);
 
             _manager.ConnectionChanged += OnConnectionChanged;
+
+            if (_logs != null)
+            {
+                _logs.Written += OnLogged;
+                _openLogs.Click += OnOpenLogs;
+            }
+
+            _openLogs.Visible = _logs != null;
+
             Refresh();
+        }
+
+        /// <summary>
+        /// Only warnings and worse: the file carries everything, and a pane that scrolls past
+        /// routine chatter is one nobody reads when it matters.
+        /// </summary>
+        private void OnLogged(object sender, LogEntryEventArgs e)
+        {
+            if (e.Level >= LogLevel.Warning) Report(e.Message);
+        }
+
+        private void OnOpenLogs(object sender, EventArgs e)
+        {
+            try
+            {
+                Directory.CreateDirectory(_logs.Directory);
+                Process.Start("explorer.exe", $"\"{_logs.Directory}\"");
+            }
+            catch (Exception ex)
+            {
+                Report($"Could not open {_logs.Directory}: {ex.Message}");
+            }
         }
 
         /// <summary>Wrapping tracks the pane, which the user can resize, rather than a fixed width.</summary>
@@ -100,6 +144,10 @@ namespace DataverseAddIn.WinForms
         /// <summary>Appends a line to the pane's log, so callers can report without a dialog.</summary>
         public void Report(string message)
         {
+            // Same trap as OnConnectionChanged: InvokeRequired is false with no handle, whatever
+            // the thread, and log entries arrive from wherever the work happened.
+            if (!IsHandleCreated) return;
+
             if (InvokeRequired)
             {
                 BeginInvoke(new Action<string>(Report), message);
@@ -173,7 +221,11 @@ namespace DataverseAddIn.WinForms
 
         protected override void Dispose(bool disposing)
         {
-            if (disposing) _manager.ConnectionChanged -= OnConnectionChanged;
+            if (disposing)
+            {
+                _manager.ConnectionChanged -= OnConnectionChanged;
+                if (_logs != null) _logs.Written -= OnLogged;
+            }
 
             base.Dispose(disposing);
         }

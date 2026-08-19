@@ -16,6 +16,12 @@ namespace DataverseAddIn.ExcelHost
         internal static DataverseTaskPanes TaskPanes { get; } = new DataverseTaskPanes();
 
         /// <summary>
+        /// Diagnostics for a host with nowhere to print: an Office add-in has no console, and
+        /// reproducing a problem means asking the user to rebuild. The file outlives the session.
+        /// </summary>
+        internal static FileLoggerProvider Logs { get; } = new FileLoggerProvider();
+
+        /// <summary>
         /// One manager for the lifetime of the add-in, so sign-in is shared. Created on first
         /// use rather than in Startup, because Office loads the ribbon and raises its OnLoad
         /// before ThisAddIn_Startup runs.
@@ -25,7 +31,8 @@ namespace DataverseAddIn.ExcelHost
             get
             {
                 lock (ConnectionsGate)
-                    return _connections ?? (_connections = new DataverseConnectionManager(BuildAuthOptions));
+                    return _connections ?? (_connections = new DataverseConnectionManager(
+                        BuildAuthOptions, logger: Logs.CreateLogger("Dataverse")));
             }
         }
 

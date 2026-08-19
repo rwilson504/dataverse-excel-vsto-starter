@@ -140,7 +140,7 @@ namespace DataverseAddIn.ExcelHost
 
         private CustomTaskPane Create(Excel.Window window)
         {
-            var control = new DataversePaneControl(ThisAddIn.Connections);
+            var control = new DataversePaneControl(ThisAddIn.Connections, ThisAddIn.Logs);
 
             var pane = Globals.ThisAddIn.CustomTaskPanes.Add(control, Title, window);
 

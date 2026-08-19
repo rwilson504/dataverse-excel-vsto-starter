@@ -170,6 +170,9 @@
     <Reference Include="Microsoft.PowerPlatform.Dataverse.Client">
       <HintPath>$(DataverseLibDir)Microsoft.PowerPlatform.Dataverse.Client.dll</HintPath>
     </Reference>
+    <Reference Include="Microsoft.Extensions.Logging.Abstractions">
+      <HintPath>$(DataverseLibDir)Microsoft.Extensions.Logging.Abstractions.dll</HintPath>
+    </Reference>
   </ItemGroup>
   <!--
     ProjectReference only copies each referenced project's own output, but ServiceClient

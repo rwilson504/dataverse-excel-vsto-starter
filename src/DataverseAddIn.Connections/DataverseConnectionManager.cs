@@ -4,6 +4,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using DataverseAddIn.Discovery;
 using Microsoft.Crm.Sdk.Messages;
+using Microsoft.Extensions.Logging;
 using Microsoft.PowerPlatform.Dataverse.Client;
 
 namespace DataverseAddIn.Connections
@@ -20,17 +21,20 @@ namespace DataverseAddIn.Connections
             new Dictionary<CredentialSpec, IDataverseCredential>();
         private readonly ConnectionStore _store;
         private readonly ISecretStore _secrets;
+        private readonly ILogger _logger;
 
         /// <summary>Every kind <see cref="CredentialFactory"/> implements, which is the usual case.</summary>
         public DataverseConnectionManager(
             Func<DataverseCloud, DataverseAuthOptions> authOptionsFactory,
             ConnectionStore store = null,
-            ISecretStore secrets = null)
+            ISecretStore secrets = null,
+            ILogger logger = null)
         {
             if (authOptionsFactory == null) throw new ArgumentNullException(nameof(authOptionsFactory));
 
             _store = store ?? new ConnectionStore();
             _secrets = secrets ?? new DpapiSecretStore();
+            _logger = logger;
             _ownedFactory = new CredentialFactory(authOptionsFactory, _secrets);
             _credentialFactory = _ownedFactory.Create;
         }
@@ -43,17 +47,20 @@ namespace DataverseAddIn.Connections
         public static DataverseConnectionManager WithCredentials(
             Func<CredentialSpec, IDataverseCredential> credentialFactory,
             ConnectionStore store = null,
-            ISecretStore secrets = null) =>
-            new DataverseConnectionManager(credentialFactory, store, secrets);
+            ISecretStore secrets = null,
+            ILogger logger = null) =>
+            new DataverseConnectionManager(credentialFactory, store, secrets, logger);
 
         private DataverseConnectionManager(
             Func<CredentialSpec, IDataverseCredential> credentialFactory,
             ConnectionStore store,
-            ISecretStore secrets)
+            ISecretStore secrets,
+            ILogger logger)
         {
             _credentialFactory = credentialFactory ?? throw new ArgumentNullException(nameof(credentialFactory));
             _store = store ?? new ConnectionStore();
             _secrets = secrets ?? new DpapiSecretStore();
+            _logger = logger;
         }
 
         /// <summary>Raised whenever the active connection changes, so hosts can refresh UI state.</summary>
@@ -183,14 +190,32 @@ namespace DataverseAddIn.Connections
                     $"The credential supplied for {environment.Cloud} is configured for {credential.Cloud}.");
             }
 
-            var client = await credential
-                .CreateClientAsync(environment, cancellationToken: cancellationToken)
-                .ConfigureAwait(false);
+            _logger?.LogInformation(
+                "Connecting to {Environment} in {Cloud} as {Kind}.",
+                environment.Url, environment.Cloud, profile.AuthKind);
+
+            ServiceClient client;
+
+            try
+            {
+                client = await credential
+                    .CreateClientAsync(environment, _logger, cancellationToken)
+                    .ConfigureAwait(false);
+            }
+            catch (Exception ex)
+            {
+                // Logged here rather than left to the caller: the UI shows one line, and the
+                // detail that identifies the cause is in the chain below it.
+                _logger?.LogError(ex, "Connecting to {Environment} failed.", environment.Url);
+                throw;
+            }
 
             Disconnect();
 
             Current = client;
             CurrentProfile = profile;
+
+            _logger?.LogInformation("Connected to {Organization}.", client.ConnectedOrgFriendlyName);
 
             if (profile.AdoptOrganizationName(client.ConnectedOrgFriendlyName))
                 _store.Save();
@@ -225,7 +250,7 @@ namespace DataverseAddIn.Connections
             }
 
             using (var client = await credential
-                       .CreateClientAsync(environment, cancellationToken: cancellationToken)
+                       .CreateClientAsync(environment, _logger, cancellationToken)
                        .ConfigureAwait(false))
             {
                 // Connecting proves the identity resolves. WhoAmI proves the account exists in
