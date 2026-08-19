@@ -1035,7 +1035,7 @@
   `UseVisualStyleBackColor = true`; assignment order matters, because setting `BackColor`
   clears that flag.
 - Added `tools/verify-pane-control.ps1`, following the `verify-connection-dialog.ps1` pattern:
-  constructs the pane off-screen against a temp store and reports each child''s text, size,
+  constructs the pane off-screen against a temp store and reports each child's text, size,
   colours and theming. Mutation-checked by dropping `UseVisualStyleBackColor` - it fails.
 - Lesson: **three rounds of plausible reasoning lost to one round of measurement.** When a
   value is not doing what is expected, print the value before theorising about the mechanism.
