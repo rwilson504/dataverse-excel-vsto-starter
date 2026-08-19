@@ -38,6 +38,8 @@ namespace DataverseAddIn.Connections
             if (tokenSource == null) throw new ArgumentNullException(nameof(tokenSource));
             if (environment == null) throw new ArgumentNullException(nameof(environment));
 
+            NetworkDefaults.Ensure();
+
             if (environment.Cloud != tokenSource.Cloud)
             {
                 throw new InvalidOperationException(

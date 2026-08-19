@@ -44,7 +44,7 @@ namespace DataverseAddIn.Discovery
 
             // .NET Framework 4.6.2 honours the OS default, but older policy settings on managed
             // machines can still leave TLS 1.0 selected, which Dataverse rejects outright.
-            ServicePointManager.SecurityProtocol |= SecurityProtocolType.Tls12;
+            NetworkDefaults.Ensure();
 
             _ownsHttpClient = httpClient == null;
             _httpClient = httpClient ?? new HttpClient();

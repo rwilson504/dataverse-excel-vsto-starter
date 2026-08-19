@@ -1058,3 +1058,28 @@
 - Not isolated: which of the two paths was actually failing in Excel. Both are genuine, both are
   fixed, and the guard covers the one that could fail silently - but the exact mechanism was
   reasoned from the code, not observed. Said plainly rather than claimed as diagnosed.
+
+- Prompts: 31
+- Summary: Two runtime diagnostics paid for themselves immediately.
+- **Buttons: `fore=White`.** `ForeColor` is ambient like `BackColor`, and the VSTO task pane host
+  supplies white, so every child inherited it. This was the original bug all along - the URL
+  that "could not be read" was white, not gray. The earlier legibility fix only appeared to work
+  because `Refresh` sets `_detail.ForeColor` explicitly; the buttons never got one, so setting
+  `BackColor = Window` turned them into white text on white. The control now states both.
+- `verify-pane-control.ps1` now hosts the pane on a **white-ForeColor form**, reproducing the
+  task pane host rather than approximating it. Mutation-checked: removing the stated `ForeColor`
+  fails with exactly the observed symptom.
+- **Connection error: `An existing connection was forcibly closed by the remote host`.** The
+  cause is an ordering side effect - `ServicePointManager.SecurityProtocol |= Tls12` was set in
+  the `GlobalDiscoveryClient` constructor only. That setting is **process-wide**, so connecting
+  worked earlier in the day only because discovery had been used first; connecting straight to a
+  saved environment never ran it. Moved to `NetworkDefaults.Ensure()`, called from both the
+  discovery client and `DataverseServiceClientFactory`.
+- Honest limit: TLS is unlikely to be the whole story, because .NET Framework 4.6.2 already
+  includes TLS 1.2 by default and MSAL sign-in had succeeded over HTTPS moments earlier. A
+  forcible close is usually network-layer - proxy, VPN or an interception tool. Fixing the
+  ordering is right regardless; whether it fixes *this* failure is unproven.
+- Error reporting was hiding the answer: the factory passes `client.LastException` as the inner
+  exception and both surfaces showed only `ex.Message`. `ErrorDetail.Describe` now walks the
+  chain, de-duplicating repeated wrapper messages, and appends the innermost type - which is
+  what identified `SocketException` here.

@@ -488,7 +488,7 @@ namespace DataverseAddIn.WinForms
             catch (Exception ex)
             {
                 _testResult.ForeColor = Color.Firebrick;
-                _testResult.Text = ex.Message;
+                _testResult.Text = $"{ErrorDetail.Describe(ex)} ({ErrorDetail.Origin(ex)})";
             }
             finally
             {

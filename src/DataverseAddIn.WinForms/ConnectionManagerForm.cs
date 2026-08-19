@@ -317,7 +317,8 @@ namespace DataverseAddIn.WinForms
             catch (Exception ex)
             {
                 _status.ForeColor = Color.Firebrick;
-                _status.Text = ex.Message;
+                _status.Text = $"{ErrorDetail.Describe(ex)} ({ErrorDetail.Origin(ex)})";
+                _tips.SetToolTip(_status, _status.Text);
             }
             finally
             {

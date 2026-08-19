@@ -35,9 +35,13 @@ try {
     $manager = New-Object DataverseAddIn.Connections.DataverseConnectionManager($options, $store, $null)
     $pane = New-Object DataverseAddIn.WinForms.DataversePaneControl($manager)
 
-    # Force a layout at the width Excel gives a 600-point pane, roughly 800px.
+    # Force a layout at the width Excel gives a 600-point pane, roughly 800px. The white
+    # ForeColor reproduces the VSTO task pane host: ForeColor is ambient, so a pane that does
+    # not state its own inherits white and draws white text on a white background.
     $host_ = New-Object System.Windows.Forms.Form
     $host_.ClientSize = New-Object System.Drawing.Size(800, 600)
+    $host_.ForeColor = [System.Drawing.Color]::White
+    $host_.BackColor = [System.Drawing.Color]::White
     $host_.Controls.Add($pane)
     $host_.CreateControl()
     $pane.PerformLayout()
@@ -70,6 +74,20 @@ try {
         # this the buttons inherit it, drop their themed face and vanish into the background.
         if (-not $button.UseVisualStyleBackColor) {
             throw "REGRESSION: $field is not themed, so it will render as a flat $($button.BackColor.Name) block."
+        }
+
+        # The host above supplies a white ForeColor, as the real task pane does. Inheriting it
+        # is what made these read as blank buttons in Excel.
+        if ($button.ForeColor.ToArgb() -eq [System.Drawing.Color]::White.ToArgb()) {
+            throw "REGRESSION: $field inherited the host's white ForeColor and will be unreadable."
+        }
+    }
+
+    foreach ($field in '_environment', '_detail') {
+        $label = $pane.GetType().GetField($field, $private).GetValue($pane)
+
+        if ($label.ForeColor.ToArgb() -eq [System.Drawing.Color]::White.ToArgb()) {
+            throw "REGRESSION: $field inherited the host's white ForeColor and will be invisible."
         }
     }
 

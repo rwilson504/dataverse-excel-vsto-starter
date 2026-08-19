@@ -37,9 +37,10 @@ namespace DataverseAddIn.WinForms
             Dock = DockStyle.Fill;
             Padding = new Padding(8);
 
-            // Stated rather than inherited: a task pane host supplies its own background, and
-            // the default gray-on-gray left the environment URL unreadable.
+            // Both are ambient, and the task pane host supplies white for ForeColor — which is
+            // why the URL looked invisible and the buttons read as blank. State both.
             BackColor = SystemColors.Window;
+            ForeColor = SystemColors.ControlText;
 
             _detail.Margin = new Padding(0, 0, 0, 8);
 
