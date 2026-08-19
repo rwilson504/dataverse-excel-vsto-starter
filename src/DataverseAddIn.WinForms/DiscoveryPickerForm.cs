@@ -28,7 +28,7 @@ namespace DataverseAddIn.WinForms
 
             this.ApplyScaling();
 
-            Text = "Select an environment";
+            Text = "Find my environments";
             StartPosition = FormStartPosition.CenterParent;
             ClientSize = new Size(820, 480);
             MinimumSize = new Size(560, 380);
@@ -66,6 +66,7 @@ namespace DataverseAddIn.WinForms
 
             _status.ForeColor = SystemColors.GrayText;
             _status.MaximumSize = new Size(520, 0);
+            _status.Text = AuthKindDescriptor.DiscoveryRequirement;
 
             _ok.Enabled = false;
             var cancel = FormScaling.CreateButton("Cancel", DialogResult.Cancel);

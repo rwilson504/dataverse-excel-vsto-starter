@@ -37,6 +37,11 @@ function Show-State($label) {
 }
 
 'kinds offered  : ' + (($combo.Items | ForEach-Object { $_.DisplayName }) -join ' | ')
+
+# Derived from the registry, so adding a discovery-capable kind must change this line rather
+# than leave the UI claiming interactive is the only option.
+'discovery needs: ' + [DataverseAddIn.Discovery.AuthKindDescriptor]::DiscoveryRequirement
+
 Show-State 'default'
 
 $combo.SelectedIndex = 1

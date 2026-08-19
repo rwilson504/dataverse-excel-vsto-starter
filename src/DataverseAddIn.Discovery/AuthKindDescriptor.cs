@@ -91,6 +91,28 @@ namespace DataverseAddIn.Discovery
         public static IReadOnlyList<AuthKindDescriptor> Supported { get; } =
             Registry.Values.OrderBy(d => d.Kind).ToList();
 
+        /// <summary>Kinds that can list environments, rather than being told one URL.</summary>
+        public static IReadOnlyList<AuthKindDescriptor> DiscoveryCapable { get; } =
+            Supported.Where(d => d.SupportsGlobalDiscovery).ToList();
+
+        /// <summary>
+        /// One line naming the sign-ins that can list environments, so UI states the current
+        /// registry rather than a hard-coded "interactive only" that a new kind would falsify.
+        /// </summary>
+        public static string DiscoveryRequirement { get; } =
+            $"Global Discovery lists the environments a signed-in user can reach, so this needs " +
+            $"{Join(DiscoveryCapable.Select(d => $"\"{d.DisplayName}\""))}. " +
+            "For an application user, add the environment by URL instead.";
+
+        private static string Join(IEnumerable<string> names)
+        {
+            var list = names.ToList();
+
+            return list.Count <= 1
+                ? list.FirstOrDefault() ?? "a sign-in kind that supports it"
+                : string.Join(", ", list.Take(list.Count - 1)) + " or " + list[list.Count - 1];
+        }
+
         public static bool TryGet(DataverseAuthKind kind, out AuthKindDescriptor descriptor) =>
             Registry.TryGetValue(kind, out descriptor);
 

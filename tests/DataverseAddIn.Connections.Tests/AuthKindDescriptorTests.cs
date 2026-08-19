@@ -18,6 +18,41 @@ namespace DataverseAddIn.Connections.Tests
             Assert.False(string.IsNullOrWhiteSpace(descriptor.Description));
         }
 
+        /// <summary>
+        /// The dialog states which sign-ins can list environments instead of hard-coding
+        /// "interactive only", so this pins the two staying in step.
+        /// </summary>
+        [Fact]
+        public void Discovery_capable_kinds_are_exactly_those_that_support_it()
+        {
+            Assert.Equal(
+                AuthKindDescriptor.Supported.Where(d => d.SupportsGlobalDiscovery).ToList(),
+                AuthKindDescriptor.DiscoveryCapable);
+
+            Assert.NotEmpty(AuthKindDescriptor.DiscoveryCapable);
+        }
+
+        [Fact]
+        public void The_discovery_requirement_names_every_kind_that_can_discover()
+        {
+            var requirement = AuthKindDescriptor.DiscoveryRequirement;
+
+            foreach (var descriptor in AuthKindDescriptor.DiscoveryCapable)
+                Assert.Contains(descriptor.DisplayName, requirement);
+
+            // The alternative matters more than the restriction: it says what to do instead.
+            Assert.Contains("URL", requirement);
+        }
+
+        [Fact]
+        public void The_discovery_requirement_does_not_name_a_kind_that_cannot_discover()
+        {
+            var cannot = AuthKindDescriptor.Supported.Where(d => !d.SupportsGlobalDiscovery);
+
+            foreach (var descriptor in cannot)
+                Assert.DoesNotContain(descriptor.DisplayName, AuthKindDescriptor.DiscoveryRequirement);
+        }
+
         /// <summary>A picker binds straight to Supported, so a listed kind must be usable.</summary>
         [Fact]
         public void Every_supported_kind_resolves_and_is_listed_once()

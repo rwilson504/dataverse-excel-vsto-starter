@@ -908,3 +908,29 @@
 - Not verified: that cancelling actually interrupts MSAL''s loopback wait against a real browser.
   It shares a code path with the timeout, so the two stand or fall together, and neither has yet
   been exercised against live MSAL.
+
+- Prompts: 21
+- Summary: Confirmed by hand that Cancel interrupts a real MSAL sign-in immediately - the one
+  thing reasoning could not settle. Then renamed "Add from discovery..." to
+  **"Find my environments..."** ("discovery" was Global Discovery Service jargon) and made the
+  interactive-only restriction visible instead of a surprise.
+- Derived the restriction rather than hard-coding it: `AuthKindDescriptor` already carried
+  `SupportsGlobalDiscovery`, so added `DiscoveryCapable` and a `DiscoveryRequirement` sentence
+  built from the registry. Adding a discovery-capable kind updates the UI text by itself. The
+  sentence leads with the alternative, since what to do instead matters more than the rule:
+  "...so this needs "Sign in interactively". For an application user, add the environment by
+  URL instead."
+- Shown in two places: a tooltip on the button, and as the picker''s opening status line, so it
+  is read before a sign-in rather than after it fails. Dialog retitled to match the button.
+- Mutation check that came back **negative, and is worth recording**: sourcing `DiscoveryCapable`
+  from `IsInteractive` instead of `SupportsGlobalDiscovery` did not fail a single test. Not a
+  weak test - the mutation is *equivalent today*, because no registered kind separates the two
+  flags (Interactive is true/true, both application-user kinds are false/false). It stops being
+  equivalent the moment a kind differs. Kept the tests; the finding is that they cannot yet
+  distinguish the two, not that they are wrong.
+- 209 tests (18 + 191), 3 new.
+- Two build-lock traps hit in one session, both self-inflicted: the sample host I launched for
+  testing locked the libraries, and then `[Reflection.Assembly]::LoadFrom` in the *persistent*
+  terminal locked them again - .NET cannot unload an assembly, so that shell could never build
+  again and had to be exited. `verify-connection-dialog.ps1` is the right place for anything
+  that needs to load these DLLs, because `pwsh tools/...` runs it in a child process that exits.

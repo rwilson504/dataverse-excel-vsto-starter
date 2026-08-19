@@ -18,12 +18,13 @@ namespace DataverseAddIn.WinForms
         private readonly ListView _list = new ListView { Dock = DockStyle.Fill };
         private readonly ImageList _swatches = new ImageList { ImageSize = new Size(14, 14) };
         private readonly Button _addUrl = FormScaling.CreateButton("Add by URL...");
-        private readonly Button _addDiscovery = FormScaling.CreateButton("Add from discovery...");
+        private readonly Button _addDiscovery = FormScaling.CreateButton("Find my environments...");
         private readonly Button _edit = FormScaling.CreateButton("Edit...");
         private readonly Button _delete = FormScaling.CreateButton("Delete");
         private readonly Button _connect = FormScaling.CreateButton("Connect");
         private readonly Button _disconnect = FormScaling.CreateButton("Disconnect");
         private readonly Label _status = new Label { AutoSize = true, Anchor = AnchorStyles.Left };
+        private readonly ToolTip _tips = new ToolTip { AutoPopDelay = 20000 };
         private readonly CancelableButton _connecting;
 
         public ConnectionManagerForm(DataverseConnectionManager manager)
@@ -41,6 +42,8 @@ namespace DataverseAddIn.WinForms
 
             _addUrl.SetGlyph(Glyphs.Add);
             _addDiscovery.SetGlyph(Glyphs.Cloud);
+            _tips.SetToolTip(_addUrl, "Add an environment you already know the URL of. Works with any sign-in.");
+            _tips.SetToolTip(_addDiscovery, AuthKindDescriptor.DiscoveryRequirement);
             _edit.SetGlyph(Glyphs.Edit);
             _delete.SetGlyph(Glyphs.Delete, Color.FromArgb(0xB3, 0x2A, 0x2A));
             _connect.SetGlyph(Glyphs.Connect, Color.FromArgb(0x2E, 0x7D, 0x32));
