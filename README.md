@@ -101,7 +101,7 @@ itself from the descriptor table, so new kinds appear in the UI for free.
 ## Quick start
 
 ```powershell
-# Build everything the .NET SDK can build, run 173 offline tests, check the dialog
+# Build everything the .NET SDK can build, run 216 offline tests, check the dialog
 pwsh tools/build-and-test.ps1
 
 # Try the UI without Office
@@ -125,15 +125,15 @@ Windows on ARM the workload only installs in VS 2019.
 | Project | Purpose |
 | --- | --- |
 | `src/DataverseAddIn.Discovery` | MSAL auth, Global Discovery, minimal Web API client. One NuGet dependency; 8 DLLs. |
-| `src/DataverseAddIn.Connections` | `ServiceClient`, credentials, saved connections, secret store. |
+| `src/DataverseAddIn.Connections` | `ServiceClient`, credentials, saved connections, secret store, file logging. |
 | `src/DataverseAddIn.Ingestion` | Bulk engine and sheet mapper. `Microsoft.Xrm.Sdk` only — testable offline, portable to any host. |
-| `src/DataverseAddIn.WinForms` | Connection manager, connection details, discovery picker. Host-agnostic. |
-| `src/DataverseAddIn.ExcelHost` | The VSTO add-in — ribbon and `ThisAddIn`. The only Excel-aware project. |
+| `src/DataverseAddIn.WinForms` | Connection manager, connection details, discovery picker, task pane. Host-agnostic. |
+| `src/DataverseAddIn.ExcelHost` | The VSTO add-in — ribbon, task panes and `ThisAddIn`. The only Excel-aware project. |
 | `samples/…ConsoleHost` | Console harness for discovery and connection flows. |
 | `samples/…WinFormsHost` | Exercises the UI without Office. |
 | `tests/…Ingestion.Tests` | 18 tests: engine, sheet mapper. |
-| `tests/…Connections.Tests` | 155 tests: credential identity, factory, connection manager, store, DPAPI secrets, scopes, cache partitioning. |
-| `tools/` | Build/test pipeline, signing-key generation, off-screen dialog check. |
+| `tests/…Connections.Tests` | 198 tests: credential identity, factory, connection manager, store, DPAPI secrets, scopes, cache partitioning, sign-in timeout, logging. |
+| `tools/` | Build/test pipeline, signing-key generation, off-screen dialog and task pane checks. |
 
 ## Documentation
 
@@ -154,9 +154,10 @@ alongside the correction.
 ## Status
 
 Interactive sign-in, client-secret and certificate service principals work end to end, with
-interactive verified against a live GCC High tenant. The ingestion engine is covered by
-offline tests but has not yet been exercised against a real environment at volume. Six further
-authentication kinds are declared and unimplemented.
+interactive verified against a live GCC High tenant. The Excel ribbon and task pane are
+exercised in Excel, and failures are written to a log file under the user's roaming profile.
+The ingestion engine is covered by offline tests but has not yet been exercised against a real
+environment at volume. Six further authentication kinds are declared and unimplemented.
 
 CI builds and tests on `windows-latest` — Windows is required, not preferred: net462, WinForms
 and DPAPI.
