@@ -22,16 +22,27 @@ Read these before the code; they explain most of what would otherwise look odd.
 
 ### 1. A VSTO add-in, not an Office Web Add-in
 
-Office Web Add-ins are Microsoft's current platform, and VSTO is the older one. This still
-chose VSTO, and the deciding input was the actual volume: **20,000 rows worst case**.
+Office Web Add-ins are Microsoft's current platform, and VSTO is the older one. For a new
+Office project the web add-in is usually the right default — so this needs justifying.
 
-At that scale the usual argument for a backend service evaporates — it is about 2% of the
-documented service-protection budget. What remains is cost: a web add-in needs HTTPS hosting
-for its HTML/JS, and in a GCC High context that hosting lands inside the compliance boundary.
-VSTO deploys to the workstation and adds nothing to it.
+The recommendation here changed twice. Web add-in first, because it is the modern answer.
+Then a *web add-in with a C# backend*, because Dataverse throttles per web server and a
+browser client can never disable the affinity cookie that pins it to one — a structural
+throughput cap. Then the actual volume arrived: **20,000 rows worst case**, roughly 2% of the
+documented request budget. The argument that had driven the entire design turned out to be
+irrelevant at this scale.
 
-The trade is real: Windows-only, no Excel on Mac, iPad or the web.
-→ [decision 0005](decisions/0005-platform-choice.md)
+What remained was cost. A web add-in must serve its HTML/JS over HTTPS from somewhere, and in
+a GCC High context that hosting lands inside the compliance boundary. VSTO deploys to the
+workstation and adds nothing to it. It also keeps the ingestion engine as ordinary testable
+C# rather than reimplemented TypeScript.
+
+**What that cost:** Windows-only — no Excel on Mac, iPad or the web — and no central
+deployment, since VSTO needs a per-machine install and a signing certificate rather than a
+push from the Microsoft 365 admin centre. Both were accepted knowingly against a
+Windows-desktop user base. The ingestion engine is deliberately host-agnostic as the hedge.
+→ [decision 0005](decisions/0005-platform-choice.md) has the full ledger and the triggers that
+would reverse it
 
 ### 2. `ExecuteMultiple` is not a throughput tool
 

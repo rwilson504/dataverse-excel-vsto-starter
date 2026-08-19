@@ -695,3 +695,24 @@
   appeared in the installer catalog). Both errors came from reporting local environment state
   as general truth. When a constraint is discovered on this machine, say which machine
   property causes it - ARM64, emulation, an installed SDK - or say it is unverified elsewhere.
+
+- Prompts: 13
+- Summary: Expanded the platform decision. The user asked whether we actually explain *why*
+  VSTO over the newer Office Web Add-in, how we got there, and what was gained and lost.
+  We did - but thinly: the narrative was one line and there was no ledger of costs.
+  `decisions/0005-platform-choice.md` now has **How we got here** (the two reversals),
+  **What we gained**, **What we gave up**, and a trigger table for **What would change this
+  decision**. README decision #1 rewritten to carry the same arc and, importantly, the losses.
+- The honest part worth keeping: I recommended the web-add-in-plus-backend option **before
+  knowing the volume**. The throughput reasoning was correct in the abstract and irrelevant
+  at 20,000 rows. Recorded as a mistake, not smoothed over.
+- Losses now stated plainly rather than implied: Windows-only; **no central deployment** (per
+  machine install and a signing cert versus a push from the M365 admin centre); VSTO is the
+  older model and is already unsupported in the new Outlook; smaller sample/developer pool;
+  contributor friction from the Office workload. Previously only "Windows-only" appeared.
+- Gains that had never been written down: stronger auth (system browser, so FIDO/Windows
+  Hello/device-compliance CA all work; DPAPI token cache; WAM as an upgrade path - a task
+  pane gets none of these), no compliance surface, and no structural throughput ceiling.
+- Fixed a dangling `[spr]` reference definition orphaned by the rewrite, and added a docs
+  check for undefined *and* unused reference-style links - an undefined one renders as
+  literal text and is easy to miss in review. 33 links, 0 broken.
