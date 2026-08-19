@@ -48,8 +48,11 @@ Build the VSTO add-in. No web add-in, no backend service.
 ## Consequences
 
 - Windows-only. Excel on Mac, iPad and the web are out of scope. Accepted deliberately.
-- The **Office/SharePoint development workload** must be installed in Visual Studio; it is
-  currently absent on the dev machine, so `src/DataverseAddIn.Excel` remains source files until then.
+- The **Office/SharePoint development workload** must be installed in Visual Studio.
+  *(Corrected 2026-08-19: the workload is available in VS 2019 and 2022 on x64. It was absent
+  here because this is a Windows-on-ARM machine, where VS 2022 reports it unavailable and only
+  the emulated VS 2019 can install it. The original note read as a VS 2022 limitation, which
+  it is not.)*
 - The engine is reusable if this is revisited: it depends only on `Microsoft.Xrm.Sdk` and
   would move to a backend unchanged. That optionality is the payoff from [0004](0004-ingestion-engine.md).
 - Revisit if volumes grow roughly tenfold, if unattended or scheduled loads are needed, or if

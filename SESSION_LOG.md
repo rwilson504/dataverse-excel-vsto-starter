@@ -678,3 +678,20 @@
 - Note: the docs describe the *current* API (`DataverseConnectionManager`, `CredentialSpec`,
   descriptors). The old README examples still used `DataverseAuthenticator` directly, which
   works but is no longer the idiomatic entry point.
+
+- Prompts: 12
+- Summary: **Correction from the user.** The docs said the Office/SharePoint workload "is only
+  installable in Visual Studio 2019 - the VS 2022 installer lists it in its catalog but
+  reports it as unavailable", framed as a VS 2022 limitation. It is not: **it is an ARM64
+  limitation.** On x64, VS 2022 has the workload. This machine is Windows on ARM, where VS
+  2022 reports it unavailable and only the emulated VS 2019 can install it.
+- Fixed in `docs/vsto.md` (prerequisites, building, running), `README.md`, and as a dated
+  correction inside `decisions/0005-platform-choice.md`. Also generalised "VS 2019 fails with
+  ... RuntimeIdentifier" to "Visual Studio", since that failure is not version-specific.
+  Left the SESSION_LOG history intact - wrong turns are recorded, not rewritten.
+- Lesson, and it is the second time this class of error has appeared here: **an observation
+  from one machine is not a property of the tool.** The earlier version of this same note was
+  already a correction (I had claimed the workload *was* available in VS 2022 because it
+  appeared in the installer catalog). Both errors came from reporting local environment state
+  as general truth. When a constraint is discovered on this machine, say which machine
+  property causes it - ARM64, emulation, an installed SDK - or say it is unverified elsewhere.

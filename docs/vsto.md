@@ -4,10 +4,14 @@ Everything Office-specific, and every trap that only shows up once Excel is in t
 
 ## Prerequisites
 
-The add-in needs the **Office/SharePoint development** workload. On the machine this was
-built on it is only installable in **Visual Studio 2019** — the VS 2022 installer lists the
-workload in its catalog but reports it as unavailable. Catalog presence is not the same as
-installable availability.
+The add-in needs the **Office/SharePoint development** workload, which is available in
+Visual Studio 2019 and 2022 on x64.
+
+**On Windows on ARM it is not.** The VS 2022 installer lists
+`Microsoft.VisualStudio.Workload.Office` in its catalog but reports it as unavailable, and
+VS 2019 — which runs emulated — is the only place it installs. That is an ARM64 limitation,
+not a VS 2022 one: on an x64 machine, use VS 2022 and ignore every 2019-specific note below.
+Catalog presence is not the same as installable availability.
 
 The libraries under `src/` build fine with the .NET SDK; only `DataverseAddIn.Excel` needs
 Visual Studio.
@@ -53,9 +57,10 @@ which produces RSA 1024 rather than 2048.
 
 ## Building
 
-VS 2019's MSBuild builds everything, including the SDK-style libraries: it uses the .NET SDK
-bundled with Visual Studio, not the .NET 10 CLI SDK, so ordinary `ProjectReference` entries
-work and no `global.json` is needed.
+On Windows on ARM this means VS 2019's MSBuild; on x64 use the 2022 equivalent. Either builds
+everything, including the SDK-style libraries, because it uses the .NET SDK bundled with
+Visual Studio rather than the .NET 10 CLI SDK — so ordinary `ProjectReference` entries work
+and no `global.json` is needed.
 
 ```powershell
 & "C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\MSBuild\Current\Bin\MSBuild.exe" `
@@ -64,8 +69,8 @@ work and no `global.json` is needed.
 
 > **Never run `dotnet build` on `DataverseExcelAddIn.sln`.** The CLI has no OfficeTools
 > targets, so it fails on `DataverseAddIn.Excel` — and worse, the restore writes
-> `project.assets.json` and `*.nuget.g.*` into `src/DataverseAddIn.Excel/obj`, after which VS
-> 2019 fails with *"Your project file doesn't list 'win' as a RuntimeIdentifier"*. The fix is
+> `project.assets.json` and `*.nuget.g.*` into `src/DataverseAddIn.Excel/obj`, after which
+> Visual Studio fails with *"Your project file doesn't list 'win' as a RuntimeIdentifier"*. The fix is
 > deleting that `obj` folder; adding `RuntimeIdentifiers`, which the error suggests, does not
 > help.
 >
@@ -85,7 +90,7 @@ the .NET 10 SDK — VSTO project types are safest in `.sln`. If you regenerate i
 1. Put your own `ClientId` values in `src/DataverseAddIn.Excel/app.config`. It deploys as
    `DataverseAddIn.Excel.dll.config`; **a VSTO add-in does not read `App.config` from anywhere
    else.**
-2. Open the solution in Visual Studio 2019, set `DataverseAddIn.Excel` as the startup project,
+2. Open the solution in Visual Studio, set `DataverseAddIn.Excel` as the startup project,
    press **F5**. Excel launches with a **Dataverse** tab containing **Connections** and
    **Who Am I**.
 

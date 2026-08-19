@@ -72,8 +72,9 @@ No credentials or network needed for either. To connect to a real environment yo
 Entra ID app registration — or, for local experimentation only, Microsoft's published sample
 client ID. See [docs/authentication.md](docs/authentication.md).
 
-Building the Excel add-in itself needs Visual Studio 2019 with the Office/SharePoint workload
-and a locally generated signing key: [docs/vsto.md](docs/vsto.md).
+Building the Excel add-in itself needs Visual Studio with the Office/SharePoint workload and a
+locally generated signing key: [docs/vsto.md](docs/vsto.md). VS 2022 is fine on x64; on
+Windows on ARM the workload only installs in VS 2019.
 
 > **Do not run `dotnet build` on the solution.** It fails on the VSTO project and leaves
 > artifacts that break the next Visual Studio build. `tools/build-and-test.ps1` exists so you
