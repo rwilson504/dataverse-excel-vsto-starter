@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Security.Cryptography.X509Certificates;
 using System.Threading;
 using System.Threading.Tasks;
@@ -93,6 +94,86 @@ namespace DataverseAddIn.Discovery
                 $"No certificate with thumbprint {normalized} was found in " +
                 string.Join(" or ", Array.ConvertAll(locations, l => $"{l}\\{storeName}")) +
                 ". Check the thumbprint, and that the certificate is installed for this account.");
+        }
+
+        /// <summary>
+        /// <see cref="Find"/> without the exception, for UI that reports as the user types.
+        /// </summary>
+        public static bool TryFind(string thumbprint, out X509Certificate2 certificate)
+        {
+            certificate = null;
+
+            if (string.IsNullOrWhiteSpace(thumbprint)) return false;
+
+            var normalized = Normalize(thumbprint);
+            if (normalized.Length == 0) return false;
+
+            foreach (var location in new[] { StoreLocation.CurrentUser, StoreLocation.LocalMachine })
+            {
+                certificate = FindIn(location, StoreName.My, normalized);
+                if (certificate != null) return true;
+            }
+
+            return false;
+        }
+
+        /// <summary>
+        /// Every certificate this add-in could actually use: present in a readable store, holding
+        /// a private key, and currently within its validity window. Freshest expiry first.
+        /// </summary>
+        /// <remarks>
+        /// The validity filter is not cosmetic. A developer machine that has ever run a debugging
+        /// proxy accumulates hundreds of expired interception certificates in
+        /// <c>CurrentUser\My</c>, all of which have private keys, and an unfiltered picker is
+        /// unusable. Expired certificates cannot authenticate anyway.
+        /// </remarks>
+        public static X509Certificate2Collection FindUsable()
+        {
+            var now = DateTime.Now;
+            var candidates = new List<X509Certificate2>();
+
+            foreach (var location in new[] { StoreLocation.CurrentUser, StoreLocation.LocalMachine })
+            {
+                var store = new X509Store(StoreName.My, location);
+
+                try
+                {
+                    store.Open(OpenFlags.ReadOnly);
+
+                    foreach (var candidate in store.Certificates)
+                    {
+                        if (candidate.HasPrivateKey && candidate.NotBefore <= now && candidate.NotAfter > now)
+                            candidates.Add(candidate);
+                    }
+                }
+                catch (System.Security.Cryptography.CryptographicException)
+                {
+                    // An inaccessible store is not an error; it just has nothing to offer.
+                }
+                finally
+                {
+                    store.Close();
+                }
+            }
+
+            candidates.Sort((left, right) => right.NotAfter.CompareTo(left.NotAfter));
+
+            var usable = new X509Certificate2Collection();
+            foreach (var candidate in candidates) usable.Add(candidate);
+
+            return usable;
+        }
+
+        /// <summary>A thumbprint tells the user nothing; this is what to show beside it.</summary>
+        public static string Describe(X509Certificate2 certificate)
+        {
+            if (certificate == null) throw new ArgumentNullException(nameof(certificate));
+
+            var expiry = certificate.NotAfter < DateTime.Now
+                ? $"EXPIRED {certificate.NotAfter:yyyy-MM-dd}"
+                : $"expires {certificate.NotAfter:yyyy-MM-dd}";
+
+            return $"{certificate.GetNameInfo(X509NameType.SimpleName, false)} \u2014 {expiry}";
         }
 
         private static X509Certificate2 FindIn(StoreLocation location, StoreName storeName, string thumbprint)

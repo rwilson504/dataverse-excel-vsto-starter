@@ -832,3 +832,28 @@
 - Dialog verified off-screen: the picker offers three kinds, Certificate swaps the field set to
   ClientId/TenantId/CertificateThumbprint, OK stays disabled until the thumbprint is entered,
   and switching away from ClientSecret clears the typed secret.
+
+- Prompts: 18
+- Summary: Added a **certificate picker** to the connection dialog - a Select... button opening
+  the Windows `X509Certificate2UI` dialog, plus a live detail line resolving the thumbprint to
+  a subject and expiry. `AuthFieldRow` gained an optional trailing button so the layout stays
+  descriptor-driven rather than special-casing one field. 196 tests (18 + 178).
+- **The probe caught a real UX bug before any user did.** The first version of `FindUsable`
+  returned everything with a private key: **1018 certificates on this machine**. Breaking it
+  down by store showed `CurrentUser\My` held 1008, of which the overwhelming majority were
+  Fiddler `DO_NOT_TRUST` interception certificates - a normal state for any developer machine
+  that has ever run a debugging proxy. A picker with a thousand rows is unusable.
+  - Fixed by filtering on the **validity window**, which is principled rather than a heuristic:
+    an expired certificate cannot authenticate, so nothing usable is hidden. 1018 -> 68.
+    Sorted freshest first. Resisted the temptation to pattern-match on "DO_NOT_TRUST" or to
+    filter by EKU - MSAL does not enforce EKU for app credentials, so that would have hidden
+    certificates people legitimately use.
+  - Two tests now pin the contract (`HasPrivateKey`, inside the validity window, sorted).
+    They assert over whatever is on the machine, so they stay meaningful anywhere.
+- `TryFind` added as `Find` without the exception, so the UI can report as the user types
+  instead of driving control flow through exceptions.
+- Live feedback also catches the wrong-thumbprint case *before* Test connection: paste
+  something absent and the line turns orange immediately.
+- Lesson worth keeping: **enumerate-the-real-machine probes find UX bugs that unit tests
+  cannot.** Nothing about `FindUsable` was incorrect - it did exactly what it said. It was
+  simply unusable against real store contents, and only running it revealed that.

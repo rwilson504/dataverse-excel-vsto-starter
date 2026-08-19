@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Drawing;
+using System.Security.Cryptography.X509Certificates;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
@@ -27,6 +28,7 @@ namespace DataverseAddIn.WinForms
         private readonly Label _detected = new Label { AutoSize = true, MaximumSize = new Size(460, 0) };
         private readonly ComboBox _authKind = new ComboBox { Dock = DockStyle.Fill, DropDownStyle = ComboBoxStyle.DropDownList };
         private readonly Label _authNotes = new Label { AutoSize = true, MaximumSize = new Size(460, 0) };
+        private readonly Label _certificateDetail = new Label { AutoSize = true, MaximumSize = new Size(460, 0) };
         private readonly Dictionary<AuthField, AuthFieldRow> _authFields = new Dictionary<AuthField, AuthFieldRow>();
         private readonly FlowLayoutPanel _swatches = new FlowLayoutPanel();
         private readonly Button _test = FormScaling.CreateButton("Test connection");
@@ -84,6 +86,9 @@ namespace DataverseAddIn.WinForms
             _authNotes.ForeColor = SystemColors.GrayText;
             _authNotes.Margin = new Padding(0, 4, 0, 8);
 
+            _certificateDetail.ForeColor = SystemColors.GrayText;
+            _certificateDetail.Margin = new Padding(0, 0, 0, 8);
+
             BuildAuthFields();
             BuildAuthKinds(authentication);
 
@@ -109,7 +114,7 @@ namespace DataverseAddIn.WinForms
             _testResult.Margin = new Padding(0, 4, 0, 0);
             _testResult.Visible = false;
 
-            var layout = FormScaling.CreateLayout(2, 10 + _authFields.Count);
+            var layout = FormScaling.CreateLayout(2, 11 + _authFields.Count);
             layout.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
             layout.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
 
@@ -126,8 +131,10 @@ namespace DataverseAddIn.WinForms
             foreach (var field in _authFields.Values)
             {
                 layout.Controls.Add(field.Label, 0, row);
-                layout.Controls.Add(field.Editor, 1, row++);
+                layout.Controls.Add(field.Container, 1, row++);
             }
+
+            layout.Controls.Add(_certificateDetail, 1, row++);
 
             layout.Controls.Add(FormScaling.CreateLabel("Colour"), 0, row);
             layout.Controls.Add(_swatches, 1, row++);
@@ -178,15 +185,21 @@ namespace DataverseAddIn.WinForms
             Add(AuthField.TenantId, "Directory (tenant) ID");
             Add(AuthField.UserName, "User name");
             Add(AuthField.ClientSecret, "Client secret", isSecret: true);
-            Add(AuthField.CertificateThumbprint, "Certificate thumbprint");
 
-            void Add(AuthField field, string label, bool isSecret = false)
+            var browse = FormScaling.CreateButton("Select...");
+            browse.Click += OnSelectCertificate;
+            Add(AuthField.CertificateThumbprint, "Certificate", action: browse);
+
+            void Add(AuthField field, string label, bool isSecret = false, Button action = null)
             {
                 var editor = new TextBox { Dock = DockStyle.Fill, MinimumSize = new Size(360, 0) };
 
                 if (isSecret) editor.UseSystemPasswordChar = true;
 
                 editor.TextChanged += (s, e) => UpdateOkState();
+
+                if (field == AuthField.CertificateThumbprint)
+                    editor.TextChanged += (s, e) => DescribeCertificate();
 
                 _authFields[field] = new AuthFieldRow(FormScaling.CreateLabel(label), editor);
             }
@@ -236,6 +249,8 @@ namespace DataverseAddIn.WinForms
             if (_secretAlreadySaved && (shown & AuthField.ClientSecret) == AuthField.ClientSecret)
                 secret.Label.Text = secret.Caption + " (blank keeps the saved one)";
 
+            DescribeCertificate();
+
             _authNotes.ForeColor = descriptor.Warning == null ? SystemColors.GrayText : Color.DarkOrange;
             _authNotes.Text = descriptor.Warning == null
                 ? descriptor.Description
@@ -252,6 +267,75 @@ namespace DataverseAddIn.WinForms
 
             var text = row.Editor.Text.Trim();
             return text.Length == 0 ? null : text;
+        }
+
+        /// <summary>
+        /// The Windows certificate picker, limited to certificates that could actually be used:
+        /// present in a readable store and holding a private key.
+        /// </summary>
+        private void OnSelectCertificate(object sender, EventArgs e)
+        {
+            var usable = CertificateTokenSource.FindUsable();
+
+            if (usable.Count == 0)
+            {
+                _certificateDetail.ForeColor = Color.DarkOrange;
+                _certificateDetail.Text =
+                    "No currently-valid certificate with a private key was found in your personal " +
+                    "store. Import the PFX rather than the .cer, or paste a thumbprint below.";
+                return;
+            }
+
+            var chosen = X509Certificate2UI.SelectFromCollection(
+                usable,
+                "Select a certificate",
+                $"Choose the certificate registered on the Entra ID application. " +
+                $"Showing {usable.Count} currently-valid certificate(s) with a private key.",
+                X509SelectionFlag.SingleSelection,
+                Handle);
+
+            if (chosen.Count == 0) return;
+
+            _authFields[AuthField.CertificateThumbprint].Editor.Text = chosen[0].Thumbprint;
+            DescribeCertificate();
+        }
+
+        /// <summary>A thumbprint is unreadable, so say which certificate it resolves to.</summary>
+        private void DescribeCertificate()
+        {
+            var row = _authFields[AuthField.CertificateThumbprint];
+
+            if (!row.IsApplicable)
+            {
+                _certificateDetail.Visible = false;
+                return;
+            }
+
+            _certificateDetail.Visible = true;
+
+            var thumbprint = row.Editor.Text.Trim();
+
+            if (thumbprint.Length == 0)
+            {
+                _certificateDetail.ForeColor = SystemColors.GrayText;
+                _certificateDetail.Text = "Select a certificate, or paste a thumbprint.";
+                return;
+            }
+
+            if (CertificateTokenSource.TryFind(thumbprint, out var certificate))
+            {
+                var description = CertificateTokenSource.Describe(certificate);
+
+                _certificateDetail.ForeColor = description.Contains("EXPIRED")
+                    ? Color.DarkOrange
+                    : SystemColors.GrayText;
+                _certificateDetail.Text = description;
+            }
+            else
+            {
+                _certificateDetail.ForeColor = Color.DarkOrange;
+                _certificateDetail.Text = "No certificate with that thumbprint is installed for this account.";
+            }
         }
 
         private bool RequiredFieldsSupplied()
@@ -412,16 +496,46 @@ namespace DataverseAddIn.WinForms
         /// <summary>A label and editor pair that hides together, collapsing its auto-sized row.</summary>
         private sealed class AuthFieldRow
         {
-            public AuthFieldRow(Label label, TextBox editor)
+            public AuthFieldRow(Label label, TextBox editor, Button action = null)
             {
                 Label = label;
                 Editor = editor;
                 Caption = label.Text;
+
+                if (action == null)
+                {
+                    Container = editor;
+                    return;
+                }
+
+                // The editor still has to fill the cell, so the button gets a fixed column.
+                var row = new TableLayoutPanel
+                {
+                    ColumnCount = 2,
+                    RowCount = 1,
+                    AutoSize = true,
+                    AutoSizeMode = AutoSizeMode.GrowAndShrink,
+                    Margin = new Padding(0),
+                    Dock = DockStyle.Fill
+                };
+
+                row.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100F));
+                row.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
+                row.Controls.Add(editor, 0, 0);
+                row.Controls.Add(action, 1, 0);
+
+                Action = action;
+                Container = row;
             }
 
             public Label Label { get; }
 
             public TextBox Editor { get; }
+
+            public Button Action { get; }
+
+            /// <summary>What goes in the layout's second column — the editor, or editor plus button.</summary>
+            public Control Container { get; }
 
             public string Caption { get; }
 
@@ -436,7 +550,7 @@ namespace DataverseAddIn.WinForms
             {
                 IsApplicable = applicable;
                 Label.Visible = applicable;
-                Editor.Visible = applicable;
+                Container.Visible = applicable;
 
                 if (!applicable) Editor.Clear();
             }

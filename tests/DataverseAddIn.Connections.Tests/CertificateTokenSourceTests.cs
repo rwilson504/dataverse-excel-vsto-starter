@@ -78,10 +78,54 @@ namespace DataverseAddIn.Connections.Tests
             Assert.Contains("DC6C689022C905EA5F812B51F1574ED10F256FF6", error.Message);
         }
 
+        /// <summary>
+        /// The picker list must never include a certificate that cannot authenticate. A machine
+        /// that has run a debugging proxy accumulates hundreds of expired interception
+        /// certificates, all with private keys — this filter is the difference between a usable
+        /// picker and a thousand-row one.
+        /// </summary>
+        [Fact]
+        public void Only_currently_valid_certificates_with_a_private_key_are_offered()
+        {
+            var now = DateTime.Now;
+
+            foreach (var certificate in CertificateTokenSource.FindUsable())
+            {
+                Assert.True(certificate.HasPrivateKey, $"{certificate.Thumbprint} has no private key.");
+                Assert.True(certificate.NotAfter > now, $"{certificate.Thumbprint} expired {certificate.NotAfter:d}.");
+                Assert.True(certificate.NotBefore <= now, $"{certificate.Thumbprint} is not valid yet.");
+            }
+        }
+
+        /// <summary>Freshest first, so the one a user just installed is at the top.</summary>
+        [Fact]
+        public void The_offered_certificates_are_sorted_by_expiry()
+        {
+            var offered = CertificateTokenSource.FindUsable();
+
+            for (var i = 1; i < offered.Count; i++)
+                Assert.True(offered[i - 1].NotAfter >= offered[i].NotAfter, "Certificates are not sorted by expiry.");
+        }
+
+        [Fact]
+        public void Describe_rejects_a_null_certificate()
+        {
+            Assert.Throws<ArgumentNullException>(() => CertificateTokenSource.Describe(null));
+        }
+
+        [Theory]
+        [InlineData(null)]
+        [InlineData("")]
+        [InlineData("not hex at all")]
+        public void TryFind_reports_rather_than_throwing(string thumbprint)
+        {
+            Assert.False(CertificateTokenSource.TryFind(thumbprint, out var certificate));
+            Assert.Null(certificate);
+        }
+
         /// <summary>A certificate connection carries the thumbprint as its identity, not a user name.</summary>
         [Fact]
-        public void Certificate_profiles_are_identified_by_thumbprint()
-        {
+        public void Certificate_profiles_are_identified_by_thumbprint()        {
             var profile = new ConnectionProfile
             {
                 CloudName = "Commercial",
