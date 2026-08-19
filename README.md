@@ -323,6 +323,40 @@ The add-in needs the **Office/SharePoint development** workload. On this machine
 installable in **Visual Studio 2019** — the VS 2022 installer lists the workload in its
 catalog but reports it as unavailable.
 
+#### First, generate a signing key
+
+The repository deliberately contains **no** `DataverseAddIn.Excel_TemporaryKey.pfx`, so the
+first build of a fresh clone fails:
+
+```
+error MSB3323: Unable to find manifest signing certificate in the certificate store.
+```
+
+Generate your own:
+
+```powershell
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File tools\new-signing-key.ps1
+```
+
+That creates an RSA 2048 / SHA-256 code-signing certificate in `Cert:\CurrentUser\My`, exports
+it to the path the project expects, and rewrites `<ManifestCertificateThumbprint>` in
+`DataverseAddIn.Excel.csproj` to match. **That `.csproj` edit is local to you — do not commit
+it.** The thumbprint cannot simply be removed from the project: VSTO's `ManageCertificateStore`
+task requires it, and dropping it fails with `MSB4044`.
+
+Visual Studio's equivalent is Project Properties → **Signing** → *Create Test Certificate*,
+which produces an RSA 1024 key rather than 2048.
+
+> The key is a throwaway per-developer identity: self-signed, untrusted by Windows, valid for
+> a year. It is excluded from source control on purpose. Shipping one key with a template would
+> give every user the same publisher identity — and ClickOnce keys publisher trust to the
+> certificate, so anyone holding it could sign an update that a machine which already trusts
+> that publisher would accept without prompting. For real distribution, use a code-signing
+> certificate from a certificate authority; a self-signed key always shows "Unknown Publisher"
+> on first install.
+
+#### Then build
+
 VS 2019's MSBuild builds everything, including the SDK-style libraries: it uses the .NET SDK
 bundled with Visual Studio, not the .NET 10 CLI SDK, so ordinary `ProjectReference` entries
 work and no `global.json` is needed.
