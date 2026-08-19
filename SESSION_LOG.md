@@ -934,3 +934,30 @@
   terminal locked them again - .NET cannot unload an assembly, so that shell could never build
   again and had to be exited. `verify-connection-dialog.ps1` is the right place for anything
   that needs to load these DLLs, because `pwsh tools/...` runs it in a child process that exits.
+
+- Prompts: 22
+- Summary: Investigated how an air-gapped/sovereign cloud could supply its own Global Discovery
+  endpoint without those endpoints being shipped in the app. Design only - deferred, nothing
+  implemented.
+- Verified, and worth keeping: `ConfigurationManager` binds to the **host process**, not to the
+  loaded assembly (probe: `OpenExeConfiguration(...).FilePath` was unchanged after `LoadFrom`
+  of one of our DLLs). That looked at first like a bug in `ThisAddIn.BuildAuthOptions`, whose
+  comment claims the add-in reads its own `.dll.config` - but the probe only demonstrates the
+  *default* AppDomain. VSTO loads each add-in into its own AppDomain with `<addin>.dll.config`
+  as that domain''s configuration file, so the comment is correct and the `ClientId.<Cloud>`
+  settings do work in Excel. **Near-miss recorded deliberately: a probe that models the wrong
+  host proves nothing about the real one.**
+- Recommendation, if picked up later: a `clouds.json` beside `connections.json` in the roaming
+  profile, not app.config. ClickOnce replaces deployed files on update, buries them under
+  `%LOCALAPPDATA%\Apps\2.0\<mangled>`, and hashes them for integrity; and pre-seeding one in the
+  installer would put the sensitive endpoints back into the build, which is the thing being
+  avoided. A roaming-profile file survives updates, needs no admin rights, and can be pushed by
+  GPO. An entry needs authority host, ClientId/TenantId and URL suffixes, not just the
+  discovery URL - a sovereign cloud has its own Entra directory and its own app registration.
+- Blocker to weigh first: `DataverseCloud` is an enum used as a lookup key in 19 files
+  (`CredentialSpec`, token-cache filename, `ConnectionProfile`), so a user-defined cloud means
+  replacing it with a value object. Mitigating: `ConnectionProfile` already persists the cloud
+  as a string, so the on-disk format would not change. A smaller alternative was noted - a
+  single `Custom` enum member fed from the file, which supports one extra cloud per user for a
+  fraction of the churn.
+- No decision record written, because nothing was decided.
