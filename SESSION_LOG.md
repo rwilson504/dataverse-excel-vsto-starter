@@ -653,3 +653,28 @@
     `Certificate` kind), asserting every row has exactly as many cells as there are columns.
     Column/subitem misalignment in a `ListView` is silent, which is why it was worth checking
     rather than eyeballing.
+
+- Prompts: 11
+- Summary: **Documentation restructure.** README went from 571 lines of numbered tutorial to
+  ~120 lines of reasoning: the problem, the three shaping decisions (VSTO over web add-in,
+  bulk APIs over `ExecuteMultiple`, pluggable auth), quick start, pointers. The how-to moved
+  into `docs/architecture.md`, `docs/authentication.md`, `docs/vsto.md`, `docs/ingestion.md`.
+  Added `AGENTS.md` plus a thin `.github/copilot-instructions.md` pointing at it.
+- Evidence the restructure was overdue: the README contained **two separate
+  `### VSTO gotchas` sections** (lines 454 and 500) and never mentioned the credential
+  abstraction at all, despite steps 1-5 having added it. Both fixed. Verified all 33 relative
+  markdown links resolve, and that no duplicate headings remain anywhere.
+- **Declined to use Understand-Anything**, which the user asked about, and said why: its
+  pitch is a 200k-line unfamiliar codebase; this is **6,467 lines across 63 files** in five
+  deliberately-layered projects, where a structural graph mostly restates the folder names.
+  The valuable knowledge here is non-structural and unrecoverable from source - GCC using
+  public Entra, `ExecuteMultiple` not being a throughput tool, `Control.Visible` after
+  `ShowDialog`, `MSB4044`. Add the first-run token cost and the staleness risk of a committed
+  graph and it does not pay yet. Revisit past ~30-50k lines or with contributors who lack the
+  decision-record context; its `/understand-onboard` would make a decent contributor-guide
+  draft.
+- `AGENTS.md` deliberately leads with the traps rather than the architecture, because an
+  agent that reads only the first screen should still avoid `dotnet build` on the solution.
+- Note: the docs describe the *current* API (`DataverseConnectionManager`, `CredentialSpec`,
+  descriptors). The old README examples still used `DataverseAuthenticator` directly, which
+  works but is no longer the idiomatic entry point.
