@@ -43,8 +43,18 @@ namespace DataverseAddIn.ExcelHost
             var window = ActiveWindow;
             if (window == null) return;
 
-            var pane = Find(window) ?? Create(window);
-            if (pane != null) pane.Visible = visible;
+            var pane = Find(window);
+            var isNew = pane == null;
+
+            if (isNew) pane = Create(window);
+            if (pane == null) return;
+
+            pane.Visible = visible;
+
+            // Office ignores Width while the pane is hidden — set in Create it opened at the
+            // minimum instead. Only for a new pane, so a user's own resize survives reopening.
+            // Not in a VisibleChanged handler: setting Width there throws COMException.
+            if (isNew && visible) pane.Width = DefaultWidthInPoints;
         }
 
         /// <summary>Writes to the pane's log if it exists, so callers need not care whether it is open.</summary>
@@ -106,11 +116,10 @@ namespace DataverseAddIn.ExcelHost
             var control = new DataversePaneControl(ThisAddIn.Connections);
 
             var pane = Globals.ThisAddIn.CustomTaskPanes.Add(control, Title, window);
-            pane.DockPosition = Office.MsoCTPDockPosition.msoCTPDockPositionRight;
 
-            // Width is in POINTS, not pixels, and only settable while docked left or right —
-            // setting it on a top/bottom dock throws COMException.
-            pane.Width = DefaultWidthInPoints;
+            // Width is in POINTS, not pixels, and throws COMException on a top/bottom dock —
+            // so the dock position has to be settled before Show applies the width.
+            pane.DockPosition = Office.MsoCTPDockPosition.msoCTPDockPositionRight;
 
             _panes[window.Hwnd] = pane;
 

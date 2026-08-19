@@ -994,3 +994,20 @@
   registration.
 - No per-file copyright headers and no NuGet licence metadata: nothing here is packaged, so a
   root LICENSE is the whole obligation.
+
+- Prompts: 25
+- Summary: Second F5 confirmed the legibility fixes worked (white background, dark text, URL
+  readable) and gave the evidence that was missing for the width: the pane opened at Office''s
+  minimum, title clipped to "Datav..." and the Connections button reduced to a blank sliver.
+- That **contradicts the documented example**, which sets `Width` before `Visible`. Observation
+  wins: `Width` set on a hidden pane is ignored. Moved it into `Show`, applied immediately after
+  `Visible = true`, and only for a newly created pane so a user resize survives closing and
+  reopening. Deliberately not in a `VisibleChanged` handler - the docs say setting `Width`
+  there throws `COMException`.
+- Sequence that matters: `DockPosition` must be settled first, because `Width` throws on a
+  top/bottom dock.
+- Lesson worth keeping: **the first attempt reasoned from the docs and changed nothing, which
+  was right at the time** - the theory was unproven. One screenshot of the real host settled it.
+  Docs describe the API contract; they do not always describe Office''s behaviour.
+- Still unproven until the next run: whether 300 points renders wide enough, and whether Office
+  restores a remembered width in preference to it.
