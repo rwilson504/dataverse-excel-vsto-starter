@@ -905,7 +905,7 @@
   timeout mutation produced last time.
 - `CancelableButton` is public rather than internal so the verification script can construct it,
   matching `FormScaling` and `Glyphs`.
-- Not verified: that cancelling actually interrupts MSAL''s loopback wait against a real browser.
+- Not verified: that cancelling actually interrupts MSAL's loopback wait against a real browser.
   It shares a code path with the timeout, so the two stand or fall together, and neither has yet
   been exercised against live MSAL.
 
@@ -920,7 +920,7 @@
   sentence leads with the alternative, since what to do instead matters more than the rule:
   "...so this needs "Sign in interactively". For an application user, add the environment by
   URL instead."
-- Shown in two places: a tooltip on the button, and as the picker''s opening status line, so it
+- Shown in two places: a tooltip on the button, and as the picker's opening status line, so it
   is read before a sign-in rather than after it fails. Dialog retitled to match the button.
 - Mutation check that came back **negative, and is worth recording**: sourcing `DiscoveryCapable`
   from `IsInteractive` instead of `SupportsGlobalDiscovery` did not fail a single test. Not a
@@ -944,7 +944,7 @@
   of one of our DLLs). That looked at first like a bug in `ThisAddIn.BuildAuthOptions`, whose
   comment claims the add-in reads its own `.dll.config` - but the probe only demonstrates the
   *default* AppDomain. VSTO loads each add-in into its own AppDomain with `<addin>.dll.config`
-  as that domain''s configuration file, so the comment is correct and the `ClientId.<Cloud>`
+  as that domain's configuration file, so the comment is correct and the `ClientId.<Cloud>`
   settings do work in Excel. **Near-miss recorded deliberately: a probe that models the wrong
   host proves nothing about the real one.**
 - Recommendation, if picked up later: a `clouds.json` beside `connections.json` in the roaming
