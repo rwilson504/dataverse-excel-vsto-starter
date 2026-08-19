@@ -42,11 +42,18 @@ project type GUID — check it is `{9A19103F-16F7-4668-BE54-9A1E7A4F7556}` after
 
 **Decision records.** Anything that changes design, and especially anything that reverses an
 earlier choice, goes in `decisions/NNNN-short-title.md` — including what was rejected and why.
-Amend an existing record when continuing its line of work rather than opening a new one.
+Amend an existing record when continuing its line of work rather than opening a new one. These
+are tracked, and they are the part of this repository most worth reading.
 
 **Session log.** `SESSION_LOG.md` gets an entry per working session: what changed, what was
 verified, and what was learned. Wrong turns are recorded, not deleted — several entries exist
 purely to stop someone repeating a failed approach.
+
+It is **git-ignored**, so it is local to whoever is working. Keep writing it: it is where a
+session's reasoning lives while that reasoning is still raw. But because nobody else can see
+it, anything a future reader would need — a lesson, a reversal, a trap — has to be promoted
+into `decisions/` or into this file. A lesson recorded only in the session log is a lesson
+lost.
 
 **Comments** state what the code cannot. No restating the next line.
 

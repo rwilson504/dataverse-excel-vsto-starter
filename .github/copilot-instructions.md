@@ -9,4 +9,6 @@ Key points, in case that file is not loaded:
   build. Use `pwsh tools/build-and-test.ps1`.
 - Tests are offline and must stay that way — no network, no credentials, no Office.
 - Mutation-check important guards: break it, confirm the expected tests fail, revert.
-- Design changes and reversals belong in `decisions/`; session outcomes in `SESSION_LOG.md`.
+- Design changes and reversals belong in `decisions/`, which is tracked. Session outcomes go in
+  `SESSION_LOG.md`, which is **git-ignored** — still write it, but treat it as local notes and
+  put anything a future reader needs into `decisions/` instead.

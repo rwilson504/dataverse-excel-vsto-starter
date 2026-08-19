@@ -13,6 +13,10 @@ packages/
 
 ## Test output
 TestResults/
+
+## Working notes, kept local rather than published. Decision records in decisions/ are written
+## for a reader and stay tracked; this one is a candid diary and is not.
+SESSION_LOG.md
 *.coverage
 *.coveragexml
 
