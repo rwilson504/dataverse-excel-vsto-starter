@@ -37,6 +37,7 @@ namespace DataverseAddIn.WinForms
         private readonly bool _urlIsFixed;
         private readonly bool _secretAlreadySaved;
         private readonly Func<DataverseEnvironmentReference, ConnectionAuthentication, CancellationToken, Task<string>> _tester;
+        private readonly CancelableButton _testing;
 
         /// <summary>Manual entry: the user types the URL.</summary>
         public ConnectionDetailsForm() : this(null, null, null)
@@ -59,6 +60,7 @@ namespace DataverseAddIn.WinForms
             _urlIsFixed = environment != null;
             _secretAlreadySaved = secretAlreadySaved;
             _tester = tester;
+            _testing = new CancelableButton(_test);
 
             Text = _urlIsFixed ? "Connection details" : "Add connection by URL";
             FormBorderStyle = FormBorderStyle.FixedDialog;
@@ -457,6 +459,8 @@ namespace DataverseAddIn.WinForms
         /// </summary>
         private async void OnTestAsync(object sender, EventArgs e)
         {
+            if (_testing.CancelIfRunning()) return;
+
             if (_tester == null || Environment == null) return;
 
             _test.Enabled = false;
@@ -469,11 +473,17 @@ namespace DataverseAddIn.WinForms
 
             try
             {
-                var description = await _tester(Environment, Authentication, CancellationToken.None)
-                    .ConfigureAwait(true);
+                string description;
+                using (var scope = _testing.Begin())
+                    description = await _tester(Environment, Authentication, scope.Token).ConfigureAwait(true);
 
                 _testResult.ForeColor = Color.ForestGreen;
                 _testResult.Text = description;
+            }
+            catch (Exception ex) when (ex is OperationCanceledException || ex is SignInCanceledException)
+            {
+                _testResult.ForeColor = SystemColors.GrayText;
+                _testResult.Text = ex is SignInCanceledException ? ex.Message : "Test cancelled.";
             }
             catch (Exception ex)
             {

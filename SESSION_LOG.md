@@ -882,3 +882,29 @@
   timeout, and that the deadline actually reaches the sign-in rather than only wrapping it.
 - Still open: there is no Cancel affordance during those five minutes. The timeout stops the
   infinite hang, it does not let the user escape early.
+
+- Prompts: 20
+- Summary: Added a Cancel affordance so an unfinished sign-in can be abandoned rather than
+  holding the window for the full five minutes. The manager already took a `CancellationToken`
+  on `ConnectAsync` / `DiscoverAsync` / `TestAsync`, and `DataverseServiceClientFactory` already
+  passed it to the interactive pre-warm, so the gap was entirely in the UI - all three call
+  sites simply passed nothing.
+- `CancelableButton` turns the starting button into its own cancel button. Reused the existing
+  button rather than adding a second one, because all three forms lay buttons out in fixed grid
+  cells; and kept the existing Click handler, with the handler calling `CancelIfRunning()`
+  first, because WinForms gives no way to detach an arbitrary handler and restore it. `Begin()`
+  returns a scope that swaps caption and glyph and restores both on dispose.
+- Ordering that matters: `Begin()` runs *after* the form disables its controls, because it
+  deliberately re-enables the one button it owns.
+- Wired into `ConnectionManagerForm` (Connect), `DiscoveryPickerForm` (Load environments) and
+  `ConnectionDetailsForm` (Test connection). All three now separate a cancellation from a
+  failure in the status text - gray, not firebrick.
+- Verified in `verify-connection-dialog.ps1` rather than as a unit test, following the existing
+  convention for WinForms. Mutation-checked by dropping `_running.Cancel()`: the script caught
+  it (`token cancelled=False` -> REGRESSION), which is a proper red rather than the hang the
+  timeout mutation produced last time.
+- `CancelableButton` is public rather than internal so the verification script can construct it,
+  matching `FormScaling` and `Glyphs`.
+- Not verified: that cancelling actually interrupts MSAL''s loopback wait against a real browser.
+  It shares a code path with the timeout, so the two stand or fall together, and neither has yet
+  been exercised against live MSAL.

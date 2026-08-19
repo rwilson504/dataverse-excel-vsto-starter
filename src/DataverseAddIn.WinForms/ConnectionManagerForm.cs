@@ -24,10 +24,12 @@ namespace DataverseAddIn.WinForms
         private readonly Button _connect = FormScaling.CreateButton("Connect");
         private readonly Button _disconnect = FormScaling.CreateButton("Disconnect");
         private readonly Label _status = new Label { AutoSize = true, Anchor = AnchorStyles.Left };
+        private readonly CancelableButton _connecting;
 
         public ConnectionManagerForm(DataverseConnectionManager manager)
         {
             _manager = manager ?? throw new ArgumentNullException(nameof(manager));
+            _connecting = new CancelableButton(_connect);
 
             this.ApplyScaling();
 
@@ -288,6 +290,8 @@ namespace DataverseAddIn.WinForms
 
         private async void OnConnectAsync(object sender, EventArgs e)
         {
+            if (_connecting.CancelIfRunning()) return;
+
             var profile = Selected;
             if (profile == null) return;
 
@@ -295,15 +299,17 @@ namespace DataverseAddIn.WinForms
 
             try
             {
-                await _manager.ConnectAsync(profile).ConfigureAwait(true);
+                using (var scope = _connecting.Begin())
+                    await _manager.ConnectAsync(profile, scope.Token).ConfigureAwait(true);
+
                 Reload();
                 UpdateStatus();
             }
-            catch (SignInCanceledException ex)
+            catch (Exception ex) when (ex is OperationCanceledException || ex is SignInCanceledException)
             {
-                // Not a failure — the user walked away or closed the browser.
+                // Not a failure — the user cancelled, or closed the browser and the wait expired.
                 _status.ForeColor = SystemColors.GrayText;
-                _status.Text = ex.Message;
+                _status.Text = ex is SignInCanceledException ? ex.Message : "Sign-in cancelled.";
             }
             catch (Exception ex)
             {

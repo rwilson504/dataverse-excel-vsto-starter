@@ -84,6 +84,36 @@ if ($null -eq $authentication.ClientId -or $null -eq $authentication.ClientSecre
 
 $form.Dispose()
 
+# The Test button doubles as its own Cancel button while a test runs, so a sign-in nobody
+# finishes can be abandoned instead of holding the dialog for the full timeout.
+$button = New-Object System.Windows.Forms.Button
+$button.Text = 'Test connection'
+$cancelable = New-Object DataverseAddIn.WinForms.CancelableButton($button)
+
+'idle click     : cancels={0} (should be False, so the click starts a test)' -f $cancelable.CancelIfRunning()
+
+$scope = $cancelable.Begin()
+'while running  : caption="{0}" enabled={1} cancelled={2}' -f `
+    $button.Text, $button.Enabled, $scope.Token.IsCancellationRequested
+
+if ($button.Text -ne 'Cancel') { throw 'REGRESSION: the button did not offer to cancel.' }
+
+$cancelled = $cancelable.CancelIfRunning()
+'after cancel   : cancels={0} token cancelled={1}' -f $cancelled, $scope.Token.IsCancellationRequested
+
+if (-not $cancelled -or -not $scope.Token.IsCancellationRequested) {
+    throw 'REGRESSION: pressing Cancel did not cancel the operation.'
+}
+
+$scope.Dispose()
+'restored       : caption="{0}" running={1}' -f $button.Text, $cancelable.IsRunning
+
+if ($button.Text -ne 'Test connection' -or $cancelable.IsRunning) {
+    throw 'REGRESSION: the button did not go back to starting a test.'
+}
+
+$button.Dispose()
+
 # A failing test must report the reason and leave the dialog usable, not wedge OK off.
 $failing = [Func[DataverseAddIn.Discovery.DataverseEnvironmentReference, `
                  DataverseAddIn.Connections.ConnectionAuthentication, `

@@ -33,6 +33,10 @@ namespace DataverseAddIn.WinForms
         public const string Upload = "\uE898";
         public const string Table = "\uE80A";
 
+        // The same codepoint as Disconnect: in both fonts it is a plain X, which reads as
+        // "unplug this" on a connected session and as "stop this" on a running operation.
+        public const string Cancel = "\uE711";
+
         private static readonly string FontName = ResolveFontName();
 
         public static bool IsAvailable => FontName != null;

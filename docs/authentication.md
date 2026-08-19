@@ -165,6 +165,13 @@ information, not as an error — nothing went wrong, the user just changed their
 The deadline is what the tests actually pin: removing it does not turn them red, it hangs the
 test run, which is the same symptom the user would see.
 
+The timeout stops the hang; it is not the whole answer, because five minutes of a dead window
+is still five minutes. So the button that starts a sign-in becomes the button that cancels it —
+`CancelableButton` swaps the caption and keeps that one control enabled while the form disables
+the rest. Cancelling that way cancels the caller's token, which is why `InteractiveSignIn` is
+careful to leave a caller-requested cancellation as `OperationCanceledException` rather than
+reporting it as a timeout: the two look identical to MSAL but mean different things to the user.
+
 ## Probing an environment without credentials
 
 Two unauthenticated checks worth knowing when onboarding a tenant or cloud.

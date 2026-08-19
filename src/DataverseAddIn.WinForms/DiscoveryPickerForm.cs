@@ -19,10 +19,12 @@ namespace DataverseAddIn.WinForms
         private readonly Button _ok = FormScaling.CreateButton("Add", DialogResult.OK);
         private readonly Label _status = new Label { AutoSize = true, Anchor = AnchorStyles.Left };
         private IReadOnlyList<DataverseInstance> _loaded = new List<DataverseInstance>();
+        private readonly CancelableButton _loading;
 
         public DiscoveryPickerForm(DataverseConnectionManager manager)
         {
             _manager = manager ?? throw new ArgumentNullException(nameof(manager));
+            _loading = new CancelableButton(_load);
 
             this.ApplyScaling();
 
@@ -104,6 +106,8 @@ namespace DataverseAddIn.WinForms
         // async void is correct for an event handler; nothing blocks the UI thread.
         private async void OnLoadAsync(object sender, EventArgs e)
         {
+            if (_loading.CancelIfRunning()) return;
+
             var cloud = ((CloudItem)_cloud.SelectedItem).Cloud;
 
             _load.Enabled = false;
@@ -117,13 +121,19 @@ namespace DataverseAddIn.WinForms
 
             try
             {
-                _loaded = await _manager.DiscoverAsync(cloud).ConfigureAwait(true);
+                using (var scope = _loading.Begin())
+                    _loaded = await _manager.DiscoverAsync(cloud, scope.Token).ConfigureAwait(true);
 
                 _search.Enabled = _loaded.Count > 0;
                 ApplyFilter();
 
                 if (_loaded.Count == 0)
                     _status.Text = "No environments returned for this account in this cloud.";
+            }
+            catch (Exception ex) when (ex is OperationCanceledException || ex is SignInCanceledException)
+            {
+                _status.ForeColor = SystemColors.GrayText;
+                _status.Text = ex is SignInCanceledException ? ex.Message : "Sign-in cancelled.";
             }
             catch (Exception ex)
             {
