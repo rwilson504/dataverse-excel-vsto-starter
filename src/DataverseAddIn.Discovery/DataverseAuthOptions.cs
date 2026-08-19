@@ -41,6 +41,14 @@ namespace DataverseAddIn.Discovery
         public string RedirectUri { get; set; } = "http://localhost";
 
         /// <summary>
+        /// How long to wait for an interactive sign-in before giving up. With the system browser
+        /// MSAL waits on a loopback listener, and closing the browser sends it nothing, so without
+        /// a deadline the caller waits forever. Use <see cref="System.Threading.Timeout.InfiniteTimeSpan"/>
+        /// to disable.
+        /// </summary>
+        public TimeSpan InteractiveTimeout { get; set; } = TimeSpan.FromMinutes(5);
+
+        /// <summary>
         /// Leave <c>false</c> to use the system browser. The embedded browser on .NET Framework
         /// is WebView1 (Internet Explorer), which breaks FIDO keys and Windows Hello and trips
         /// some Conditional Access policies.

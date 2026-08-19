@@ -93,7 +93,17 @@ namespace DataverseAddIn.Discovery
             if (account != null)
                 interactive = interactive.WithAccount(account);
 
-            return await interactive.ExecuteAsync(cancellationToken).ConfigureAwait(false);
+            try
+            {
+                return await InteractiveSignIn
+                    .RunAsync(token => interactive.ExecuteAsync(token), _options.InteractiveTimeout, cancellationToken)
+                    .ConfigureAwait(false);
+            }
+            catch (MsalClientException ex) when (ex.ErrorCode == MsalError.AuthenticationCanceledError)
+            {
+                // The embedded web view reports a closed window this way; the system browser does not.
+                throw new SignInCanceledException("Sign-in was cancelled before it completed.");
+            }
         }
 
         public async Task<IAccount> GetSignedInAccountAsync()

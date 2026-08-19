@@ -146,6 +146,25 @@ test device compliance or hybrid join need device authentication, which the .NET
 embedded WebView1 cannot do — the same account that signs in fine in the system browser can
 fail `AADSTS53003` in an embedded view. That is why `UseEmbeddedWebView` defaults to `false`.
 
+### The sign-in nobody finishes
+
+The two browsers differ in one more way, and it is the difference between a bad message and a
+frozen window. If the user closes the sign-in window before signing in:
+
+- the **embedded WebView** raises `MsalClientException` with `authentication_canceled`;
+- the **system browser** raises nothing at all. MSAL is waiting on a loopback `HttpListener`
+  for a redirect, and a closed browser sends that listener nothing. The wait simply never ends.
+
+Since this add-in deliberately uses the system browser, that second case is the one it gets —
+so `AcquireTokenInteractive` is never awaited unbounded. `DataverseAuthOptions.InteractiveTimeout`
+(five minutes by default, `Timeout.InfiniteTimeSpan` to disable) bounds it, and both cases
+surface as `SignInCanceledException`, which says the browser may have been closed rather than
+reporting a failure that did not happen. Callers that distinguish it should style it as
+information, not as an error — nothing went wrong, the user just changed their mind.
+
+The deadline is what the tests actually pin: removing it does not turn them red, it hangs the
+test run, which is the same symptom the user would see.
+
 ## Probing an environment without credentials
 
 Two unauthenticated checks worth knowing when onboarding a tenant or cloud.

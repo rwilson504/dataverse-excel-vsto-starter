@@ -857,3 +857,28 @@
 - Lesson worth keeping: **enumerate-the-real-machine probes find UX bugs that unit tests
   cannot.** Nothing about `FindUsable` was incorrect - it did exactly what it said. It was
   simply unusable against real store contents, and only running it revealed that.
+
+- Prompts: 19
+- Summary: Answered "what happens if the user closes the OAuth browser without signing in"
+  and fixed it. Answer: it hangs forever. With the system browser MSAL waits on a loopback
+  `HttpListener` for the redirect, and a closed browser sends that listener nothing - there is
+  no signal and no built-in timeout. Verified all three UI call sites awaited unbounded
+  (`ConnectAsync(profile)`, `DiscoverAsync(cloud)`, `_tester(..., CancellationToken.None)`),
+  so the dialog sat on "Connecting..." with every button disabled, indefinitely.
+- Added `InteractiveSignIn.RunAsync` in Discovery: links the caller token with a deadline and
+  translates only the deadline's cancellation into `SignInCanceledException`, leaving a
+  caller-requested cancellation as `OperationCanceledException`. `DataverseAuthOptions`
+  gained `InteractiveTimeout` (5 minutes, `Timeout.InfiniteTimeSpan` to disable).
+- Also mapped `MsalClientException` / `MsalError.AuthenticationCanceledError` to the same
+  exception. That is the *embedded* WebView's closed-window signal - not the path we use, but
+  the two browsers should not report the same user action differently.
+- `ConnectionManagerForm` now styles a cancelled sign-in as gray information rather than
+  firebrick error. Nothing failed; the user changed their mind.
+- Mutation check worth recording: replacing the deadline with `InfiniteTimeSpan` did **not**
+  turn the tests red - it **hung the test run**, which is precisely the symptom the user
+  reported. A hang is a legitimate mutation result when the thing under test is a timeout,
+  but it means the suite has no upper bound of its own; the run had to be killed manually.
+- 206 tests (18 + 188). 10 new, including that a caller cancellation is never reported as a
+  timeout, and that the deadline actually reaches the sign-in rather than only wrapping it.
+- Still open: there is no Cancel affordance during those five minutes. The timeout stops the
+  infinite hang, it does not let the user escape early.

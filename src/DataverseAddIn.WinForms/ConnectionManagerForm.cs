@@ -299,6 +299,12 @@ namespace DataverseAddIn.WinForms
                 Reload();
                 UpdateStatus();
             }
+            catch (SignInCanceledException ex)
+            {
+                // Not a failure — the user walked away or closed the browser.
+                _status.ForeColor = SystemColors.GrayText;
+                _status.Text = ex.Message;
+            }
             catch (Exception ex)
             {
                 _status.ForeColor = Color.Firebrick;
