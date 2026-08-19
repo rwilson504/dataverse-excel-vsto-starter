@@ -63,14 +63,13 @@ namespace DataverseAddIn.Connections.Tests
             Assert.Contains("Ifd", error.Message);
             Assert.Contains(nameof(DataverseAuthKind.Interactive), error.Message);
         }
-
         [Fact]
         public void TryGet_reports_rather_than_throws()
         {
             Assert.True(AuthKindDescriptor.TryGet(DataverseAuthKind.Interactive, out var supported));
             Assert.NotNull(supported);
 
-            Assert.False(AuthKindDescriptor.TryGet(DataverseAuthKind.Certificate, out var missing));
+            Assert.False(AuthKindDescriptor.TryGet(DataverseAuthKind.DeviceCode, out var missing));
             Assert.Null(missing);
         }
 

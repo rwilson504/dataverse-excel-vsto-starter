@@ -799,3 +799,36 @@
   in `docs/vsto.md` (it rewrote "the enclosing `Excel` segment" into `ExcelHost`, making the
   paragraph self-contradictory); rewrote that section by hand afterwards. Worth remembering:
   a repo-wide rename silently damages any prose that discusses the old name.
+
+- Prompts: 17
+- Summary: **Added certificate authentication** - the third credential kind. Cost was exactly
+  the four steps the abstraction promises (`CertificateTokenSource`, `CertificateCredential`,
+  descriptor entry, `CredentialFactory` case) plus one dialog field. `AuthField.CertificateThumbprint`
+  and the `ConnectionProfile` certificate columns were already in place from step 3, so nothing
+  in the model had to change. 190 tests (18 + 172).
+- Security shape worth noting: this is the first kind where **the add-in never holds the
+  credential at all**. The private key stays in the Windows certificate store; only a
+  thumbprint is persisted. Nothing in `connections.json`, nothing in the DPAPI secret store.
+  Switching a connection to Certificate deletes any previously stored secret - pinned by a test.
+- Three guards, each because the default failure sends people hunting the wrong bug:
+  - **Thumbprint normalisation.** Pasted from certmgr it carries spaces, lower case, and an
+    invisible U+200E left-to-right mark on the first character; `X509Store.Find` matches none
+    of those and reports "not found". Normalised to bare upper-case hex.
+  - **No private key** - importing the `.cer` rather than the `.pfx`. Detected with advice.
+  - **Not found** - the error names the stores searched and the normalised thumbprint.
+  - Store search order is `CurrentUser\My` then `LocalMachine\My`, with an inaccessible
+    LocalMachine store skipped rather than treated as an error (common without elevation).
+- **Could not unit test the constructor guards**, and said so in the test file rather than
+  quietly omitting them: building a certificate in memory needs `CertificateRequest`, which
+  arrived in .NET Framework **4.7.2** and does not exist on this project's net462. The
+  alternative - committing a test PFX - would put a private key in the repository for the sake
+  of a test, immediately after a conversation about why that is wrong. Covered the pure logic
+  instead.
+- Four tests failed on the way through, all of them pinning "Certificate is not implemented".
+  Same churn class as when ClientSecret landed; retargeted at `DeviceCode`/`Ifd`. Also relaxed
+  `Every_supported_descriptor_has_a_working_implementation`: it now asserts the factory does
+  not throw `NotSupportedException`, tolerating environment-dependent failures, because one
+  supported kind now needs a certificate actually installed.
+- Dialog verified off-screen: the picker offers three kinds, Certificate swaps the field set to
+  ClientId/TenantId/CertificateThumbprint, OK stays disabled until the thumbprint is entered,
+  and switching away from ClientSecret clears the typed secret.

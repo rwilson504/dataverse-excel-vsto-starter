@@ -163,7 +163,8 @@ namespace DataverseAddIn.WinForms
             ClientId = ValueOf(AuthField.ClientId),
             TenantId = ValueOf(AuthField.TenantId),
             UserName = ValueOf(AuthField.UserName),
-            ClientSecret = ValueOf(AuthField.ClientSecret)
+            ClientSecret = ValueOf(AuthField.ClientSecret),
+            CertificateThumbprint = ValueOf(AuthField.CertificateThumbprint)
         };
 
         private AuthKindDescriptor SelectedDescriptor =>
@@ -177,6 +178,7 @@ namespace DataverseAddIn.WinForms
             Add(AuthField.TenantId, "Directory (tenant) ID");
             Add(AuthField.UserName, "User name");
             Add(AuthField.ClientSecret, "Client secret", isSecret: true);
+            Add(AuthField.CertificateThumbprint, "Certificate thumbprint");
 
             void Add(AuthField field, string label, bool isSecret = false)
             {
@@ -211,6 +213,7 @@ namespace DataverseAddIn.WinForms
             _authFields[AuthField.ClientId].Editor.Text = authentication.ClientId ?? string.Empty;
             _authFields[AuthField.TenantId].Editor.Text = authentication.TenantId ?? string.Empty;
             _authFields[AuthField.UserName].Editor.Text = authentication.UserName ?? string.Empty;
+            _authFields[AuthField.CertificateThumbprint].Editor.Text = authentication.CertificateThumbprint ?? string.Empty;
         }
 
         private void OnAuthKindChanged()

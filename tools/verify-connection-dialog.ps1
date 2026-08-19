@@ -53,6 +53,19 @@ Show-State 'secret typed'
 
 'secret masked  : ' + (Field ClientSecret).Editor.UseSystemPasswordChar
 
+# Switching kind must swap the field set, and must not carry the secret across.
+$combo.SelectedIndex = 2
+Show-State 'certificate'
+
+(Field CertificateThumbprint).Editor.Text = 'DC6C689022C905EA5F812B51F1574ED10F256FF6'
+Show-State 'thumbprint typed'
+
+'secret cleared : ' + ($null -eq $form.Authentication.ClientSecret)
+
+# Back to client secret for the after-close check below.
+$combo.SelectedIndex = 1
+(Field ClientSecret).Editor.Text = 's3cret'
+
 # Deliberately not asserting $test.Visible: Control.Visible is false on a form that was never
 # shown, so it would report the same either way. Check the wiring instead.
 'test wired     : ' + ($null -ne $form.GetType().GetField('_tester', $private).GetValue($form)) + '  (none supplied)'

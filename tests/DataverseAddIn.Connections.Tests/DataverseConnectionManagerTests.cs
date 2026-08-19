@@ -131,9 +131,9 @@ namespace DataverseAddIn.Connections.Tests
                     cloud => new DataverseAuthOptions { ClientId = "app-1" }, StoreIn(dir));
 
                 var error = Assert.Throws<NotSupportedException>(
-                    () => manager.GetCredential(Spec(kind: DataverseAuthKind.Certificate, principal: "thumb")));
+                    () => manager.GetCredential(Spec(kind: DataverseAuthKind.DeviceCode, principal: "code")));
 
-                Assert.Contains("Certificate", error.Message);
+                Assert.Contains("DeviceCode", error.Message);
                 Assert.Contains(nameof(DataverseConnectionManager.WithCredentials), error.Message);
             }
         }

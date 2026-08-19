@@ -134,7 +134,7 @@ The dialog, the connection manager, the list view and the discovery gating all p
 from the descriptor. `ClientSecretCredential` was added exactly this way and changed no
 existing consumer.
 
-Kinds still unimplemented: `DeviceCode`, `Certificate`, `UsernamePassword`, `ExternalToken`,
+Kinds still unimplemented: `DeviceCode`, `UsernamePassword`, `ExternalToken`,
 `ConnectionString`, `WindowsIntegrated`, `Ifd`.
 
 ## Secrets

@@ -10,9 +10,10 @@ that combination requires.
 | --- | --- | --- | --- | --- |
 | `Interactive` | public | `<resource>/user_impersonation` | yes | yes |
 | `ClientSecret` | confidential | `<resource>/.default` | no | **no** |
+| `Certificate` | confidential | `<resource>/.default` | no | **no** |
 
-Declared but not yet implemented: `DeviceCode`, `Certificate`, `UsernamePassword`,
-`ExternalToken`, `ConnectionString`, `WindowsIntegrated`, `Ifd`. See
+Declared but not yet implemented: `DeviceCode`, `UsernamePassword`, `ExternalToken`,
+`ConnectionString`, `WindowsIntegrated`, `Ifd`. See
 [architecture](architecture.md#adding-an-authentication-kind) for what each would cost.
 
 ### The scope rule
@@ -43,6 +44,28 @@ Entra ID with an opaque error.
 
 The app registration also needs a matching **application user** with a security role in the
 environment, created in the Power Platform admin centre.
+
+### Certificate rather than secret
+
+Prefer `Certificate` over `ClientSecret` where you can. The private key stays in the Windows
+certificate store, so this add-in never holds the credential at all — there is nothing in
+`connections.json`, nothing in the DPAPI secret store, only a thumbprint.
+
+The certificate is looked up by thumbprint in `CurrentUser\My` first, then `LocalMachine\My`.
+For a desktop add-in running as the signed-in user, `CurrentUser` is the right place; an
+inaccessible `LocalMachine` store is skipped rather than treated as an error.
+
+Three failure modes get explicit messages, because each sends people hunting the wrong bug:
+
+- **Thumbprint pasted from certmgr.** It arrives with spaces, lower case, and an invisible
+  left-to-right mark on the first character; the store matches none of those. Thumbprints are
+  normalised to bare upper-case hex before searching.
+- **No private key.** Importing the `.cer` instead of the `.pfx` gives a certificate that
+  cannot sign. The error says so rather than failing later inside MSAL.
+- **Not found.** The error names the stores that were searched and the normalised thumbprint.
+
+Upload the public key to the app registration under **Certificates & secrets → Certificates**;
+the private key never leaves the machine.
 
 ## App registration
 

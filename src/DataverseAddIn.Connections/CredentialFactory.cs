@@ -1,5 +1,6 @@
 using System;
 using System.Linq;
+using System.Security.Cryptography.X509Certificates;
 using DataverseAddIn.Discovery;
 
 namespace DataverseAddIn.Connections
@@ -44,6 +45,9 @@ namespace DataverseAddIn.Connections
                         options,
                         string.IsNullOrEmpty(secretOverride) ? ResolveSecret(spec) : secretOverride);
 
+                case DataverseAuthKind.Certificate:
+                    return new CertificateCredential(options, ResolveCertificate(spec));
+
                 default:
                     throw new NotSupportedException(
                         $"Authentication kind '{spec.Kind}' has no implementation. Supported kinds: " +
@@ -80,6 +84,15 @@ namespace DataverseAddIn.Connections
                        "The saved client secret could not be read. Secrets are encrypted for the current " +
                        "Windows user on this machine, so a connection copied from elsewhere needs its " +
                        "secret entered again.");
+        }
+
+        /// <summary>For a certificate the spec's principal is the thumbprint; the key stays in the store.</summary>
+        private static X509Certificate2 ResolveCertificate(CredentialSpec spec)
+        {
+            if (spec.Principal == null)
+                throw new InvalidOperationException("This connection has no certificate thumbprint.");
+
+            return CertificateTokenSource.Find(spec.Principal);
         }
     }
 }

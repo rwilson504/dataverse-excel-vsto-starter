@@ -246,9 +246,7 @@ namespace DataverseAddIn.Connections
             ConnectionAuthentication authentication,
             string existingSecretRef)
         {
-            var principal = authentication.Kind == DataverseAuthKind.ClientSecret
-                ? existingSecretRef
-                : authentication.UserName;
+            var principal = PrincipalFor(authentication, existingSecretRef);
 
             var spec = new CredentialSpec(
                 environment.Cloud, authentication.Kind, authentication.ClientId, authentication.TenantId, principal);
@@ -265,6 +263,17 @@ namespace DataverseAddIn.Connections
 
             return _credentialFactory(spec)
                    ?? throw new InvalidOperationException($"No credential supplied for {spec}.");
+        }
+
+        /// <summary>Mirrors <see cref="ConnectionProfile.ToCredentialSpec"/> for details not yet saved.</summary>
+        private static string PrincipalFor(ConnectionAuthentication authentication, string existingSecretRef)
+        {
+            switch (authentication.Kind)
+            {
+                case DataverseAuthKind.ClientSecret: return existingSecretRef;
+                case DataverseAuthKind.Certificate: return authentication.CertificateThumbprint;
+                default: return authentication.UserName;
+            }
         }
 
         public void Disconnect()

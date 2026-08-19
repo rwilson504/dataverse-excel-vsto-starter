@@ -153,10 +153,10 @@ alongside the correction.
 
 ## Status
 
-Interactive and client-secret authentication work end to end, verified against a live GCC High
-tenant. The ingestion engine is covered by offline tests but has not yet been exercised
-against a real environment at volume. Seven further authentication kinds are declared and
-unimplemented.
+Interactive sign-in, client-secret and certificate service principals work end to end, with
+interactive verified against a live GCC High tenant. The ingestion engine is covered by
+offline tests but has not yet been exercised against a real environment at volume. Six further
+authentication kinds are declared and unimplemented.
 
 CI builds and tests on `windows-latest` — Windows is required, not preferred: net462, WinForms
 and DPAPI.

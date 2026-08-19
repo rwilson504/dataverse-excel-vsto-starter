@@ -73,7 +73,17 @@ namespace DataverseAddIn.Discovery
                     optionalFields: AuthField.None,
                     isInteractive: false,
                     supportsGlobalDiscovery: false,
-                    warning: "Cannot list environments — enter the environment URL. Needs a specific tenant, not 'organizations'.")
+                    warning: "Cannot list environments — enter the environment URL. Needs a specific tenant, not 'organizations'."),
+
+                new AuthKindDescriptor(
+                    DataverseAuthKind.Certificate,
+                    "Application user (certificate)",
+                    "Connects as a registered application using a certificate from your Windows certificate store. The private key never leaves the store, so nothing secret is saved by this add-in.",
+                    requiredFields: AuthField.ClientId | AuthField.TenantId | AuthField.CertificateThumbprint,
+                    optionalFields: AuthField.None,
+                    isInteractive: false,
+                    supportsGlobalDiscovery: false,
+                    warning: "Cannot list environments — enter the environment URL. The certificate must be installed with its private key.")
             }
             .ToDictionary(d => d.Kind);
 

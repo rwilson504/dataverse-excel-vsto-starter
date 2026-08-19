@@ -92,8 +92,7 @@ namespace DataverseAddIn.Connections
                 case DataverseAuthKind.Certificate: return CertificateThumbprint;
                 case DataverseAuthKind.ClientSecret: return SecretRef;
                 default: return UserName;
-            }
-        }
+            }        }
 
         public static ConnectionProfile Create(
             string name,
