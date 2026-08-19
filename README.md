@@ -160,3 +160,9 @@ authentication kinds are declared and unimplemented.
 
 CI builds and tests on `windows-latest` — Windows is required, not preferred: net462, WinForms
 and DPAPI.
+
+## License
+
+[MIT](LICENSE). The sample Microsoft Entra ID client ID in `app.config`
+(`51f81489-12ee-4a9e-aaae-a2591f45987d`) is Microsoft's documented public sample client, not
+mine to license — register your own before shipping anything.

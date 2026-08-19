@@ -983,3 +983,14 @@
   local `ManifestCertificateThumbprint` edit. Clean.
 - Not verified: how wide 300 points actually renders, and whether Office overrides it with a
   remembered width. Needs another F5.
+
+- Prompts: 24
+- Summary: Added an MIT `LICENSE` (Copyright (c) 2026 Rick Wilson) and a License section in the
+  README. The repo had no licence of any kind, which meant "all rights reserved" by default -
+  nobody could legally use the starter it exists to be.
+- Noted in the README that the sample client ID in `app.config`
+  (`51f81489-12ee-4a9e-aaae-a2591f45987d`) is Microsoft''s documented public sample client and
+  is not covered by this licence, since MIT cannot grant rights over someone else''s app
+  registration.
+- No per-file copyright headers and no NuGet licence metadata: nothing here is packaged, so a
+  root LICENSE is the whole obligation.
