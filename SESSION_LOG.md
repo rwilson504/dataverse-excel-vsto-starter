@@ -716,3 +716,28 @@
 - Fixed a dangling `[spr]` reference definition orphaned by the rewrite, and added a docs
   check for undefined *and* unused reference-style links - an undefined one renders as
   literal text and is easy to miss in review. 33 links, 0 broken.
+
+- Prompts: 14
+- Summary: Added the **Test connection** button - the one genuine UI gap remaining. Also
+  corrected two claims I had made from memory rather than from the code: connect failures
+  were already handled (status line in Firebrick, not a raw message box), and discovery
+  gating was not actually broken, since `DiscoverAsync` uses `CredentialSpec.ForDiscovery`
+  (always interactive) and the ClientSecret warning already renders in the dialog.
+  Suite now 176 tests (18 + 158).
+- Shape: `CredentialFactory.Create(spec, secretOverride)` lets a credential be built from a
+  secret the user has typed but not saved, so **testing never writes to the secret store**.
+  `DataverseConnectionManager.TestAsync` builds that credential *outside* the cache, connects,
+  runs `WhoAmI`, and disposes. Connecting proves the identity resolves; WhoAmI proves the
+  account exists in that environment and holds a role - which is exactly what fails for a
+  service principal with no application user, and the reason the button exists.
+- The dialog takes an optional tester delegate rather than a manager, so it stays usable
+  standalone and the caller can close over the saved `SecretRef` for the "blank keeps the
+  saved secret" case.
+- **The verification harness fell into the same `Control.Visible` trap it exists to catch.**
+  I asserted `_test.Visible` to prove the button shows/hides - but `Visible` is false on a
+  form that was never shown, so the assertion printed the expected value for the wrong reason
+  and would never have failed. Replaced with a check on the `_tester` field. Second lesson:
+  `Button.PerformClick()` is a **no-op on an unshown form** (`CanSelect` is false), so the
+  click path had to be invoked through reflection instead.
+- New checks pinned: a failing test shows the reason and **leaves OK enabled** - a failed
+  test must not wedge the dialog.

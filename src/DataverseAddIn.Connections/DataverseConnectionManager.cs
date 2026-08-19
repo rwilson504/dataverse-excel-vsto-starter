@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using DataverseAddIn.Discovery;
+using Microsoft.Crm.Sdk.Messages;
 using Microsoft.PowerPlatform.Dataverse.Client;
 
 namespace DataverseAddIn.Connections
@@ -14,6 +15,7 @@ namespace DataverseAddIn.Connections
     public sealed class DataverseConnectionManager : IDisposable
     {
         private readonly Func<CredentialSpec, IDataverseCredential> _credentialFactory;
+        private readonly CredentialFactory _ownedFactory;
         private readonly Dictionary<CredentialSpec, IDataverseCredential> _credentials =
             new Dictionary<CredentialSpec, IDataverseCredential>();
         private readonly ConnectionStore _store;
@@ -29,7 +31,8 @@ namespace DataverseAddIn.Connections
 
             _store = store ?? new ConnectionStore();
             _secrets = secrets ?? new DpapiSecretStore();
-            _credentialFactory = new CredentialFactory(authOptionsFactory, _secrets).Create;
+            _ownedFactory = new CredentialFactory(authOptionsFactory, _secrets);
+            _credentialFactory = _ownedFactory.Create;
         }
 
         /// <summary>
@@ -195,10 +198,78 @@ namespace DataverseAddIn.Connections
             ConnectionChanged?.Invoke(this, EventArgs.Empty);
         }
 
+        /// <summary>
+        /// Connects with the supplied details and disconnects again, so a connection can be
+        /// validated before it is saved. Nothing is cached or persisted: the credential is built
+        /// fresh, and a secret typed but not yet stored is used directly.
+        /// </summary>
+        /// <param name="existingSecretRef">
+        /// Used when the caller left the secret blank to keep an already-saved one.
+        /// </param>
+        /// <returns>A description of what was reached, for display.</returns>
+        public async Task<string> TestAsync(
+            DataverseEnvironmentReference environment,
+            ConnectionAuthentication authentication,
+            string existingSecretRef = null,
+            CancellationToken cancellationToken = default)
+        {
+            if (environment == null) throw new ArgumentNullException(nameof(environment));
+            if (authentication == null) throw new ArgumentNullException(nameof(authentication));
+
+            var credential = BuildTestCredential(environment, authentication, existingSecretRef);
+
+            if (environment.Cloud != credential.Cloud)
+            {
+                throw new InvalidOperationException(
+                    $"{environment.Url} is in {environment.Cloud}, but this credential is for {credential.Cloud}.");
+            }
+
+            using (var client = await credential
+                       .CreateClientAsync(environment, cancellationToken: cancellationToken)
+                       .ConfigureAwait(false))
+            {
+                // Connecting proves the identity resolves. WhoAmI proves the account exists in
+                // *this* environment and holds a security role — the part that fails for a
+                // service principal with no application user, and the reason to test at all.
+                var who = (WhoAmIResponse)client.Execute(new WhoAmIRequest());
+
+                var name = string.IsNullOrWhiteSpace(client.ConnectedOrgFriendlyName)
+                    ? environment.Url
+                    : client.ConnectedOrgFriendlyName;
+
+                return $"Connected to {name} as user {who.UserId:D}.";
+            }
+        }
+
+        private IDataverseCredential BuildTestCredential(
+            DataverseEnvironmentReference environment,
+            ConnectionAuthentication authentication,
+            string existingSecretRef)
+        {
+            var principal = authentication.Kind == DataverseAuthKind.ClientSecret
+                ? existingSecretRef
+                : authentication.UserName;
+
+            var spec = new CredentialSpec(
+                environment.Cloud, authentication.Kind, authentication.ClientId, authentication.TenantId, principal);
+
+            if (_ownedFactory != null)
+                return _ownedFactory.Create(spec, authentication.ClientSecret);
+
+            if (!string.IsNullOrEmpty(authentication.ClientSecret))
+            {
+                throw new NotSupportedException(
+                    "This connection manager was built with a custom credential factory, which cannot be " +
+                    "given an unsaved secret. Save the connection first, then connect.");
+            }
+
+            return _credentialFactory(spec)
+                   ?? throw new InvalidOperationException($"No credential supplied for {spec}.");
+        }
+
         public void Disconnect()
         {
             var hadConnection = Current != null;
-
             Current?.Dispose();
             Current = null;
             CurrentProfile = null;

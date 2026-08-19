@@ -22,7 +22,13 @@ namespace DataverseAddIn.Connections
             _secrets = secrets ?? new DpapiSecretStore();
         }
 
-        public IDataverseCredential Create(CredentialSpec spec)
+        public IDataverseCredential Create(CredentialSpec spec) => Create(spec, null);
+
+        /// <summary>
+        /// <paramref name="secretOverride"/> bypasses <see cref="ISecretStore"/>, so a secret the
+        /// user has typed but not yet saved can be validated before it is written anywhere.
+        /// </summary>
+        public IDataverseCredential Create(CredentialSpec spec, string secretOverride)
         {
             if (spec == null) throw new ArgumentNullException(nameof(spec));
 
@@ -34,7 +40,9 @@ namespace DataverseAddIn.Connections
                     return new InteractiveCredential(options);
 
                 case DataverseAuthKind.ClientSecret:
-                    return new ClientSecretCredential(options, ResolveSecret(spec));
+                    return new ClientSecretCredential(
+                        options,
+                        string.IsNullOrEmpty(secretOverride) ? ResolveSecret(spec) : secretOverride);
 
                 default:
                     throw new NotSupportedException(

@@ -126,6 +126,50 @@ namespace DataverseAddIn.Connections.Tests
             Assert.Throws<ArgumentNullException>(() => new CredentialFactory(cloud => HostDefaults()).Create(null));
         }
 
+        /// <summary>Testing a connection must not require writing the secret to disk first.</summary>
+        [Fact]
+        public void An_unsaved_secret_can_be_used_without_touching_the_store()
+        {
+            using (var dir = new TempDirectory())
+            {
+                var factory = new CredentialFactory(cloud => HostDefaults(), new DpapiSecretStore(dir.Path));
+
+                var credential = factory.Create(Spec(DataverseAuthKind.ClientSecret), "typed-but-not-saved");
+
+                Assert.IsType<ClientSecretCredential>(credential);
+                Assert.Empty(System.IO.Directory.GetFiles(dir.Path));
+            }
+        }
+
+        /// <summary>A retyped secret must win over the saved one, or testing a rotation is meaningless.</summary>
+        [Fact]
+        public void The_override_beats_the_stored_secret()
+        {
+            using (var dir = new TempDirectory())
+            {
+                var secrets = new DpapiSecretStore(dir.Path);
+                var reference = secrets.Write(null, "stored");
+
+                var credential = new CredentialFactory(cloud => HostDefaults(), secrets)
+                    .Create(Spec(DataverseAuthKind.ClientSecret, reference), "override");
+
+                Assert.IsType<ClientSecretCredential>(credential);
+                Assert.Equal("stored", secrets.Read(reference));
+            }
+        }
+
+        [Fact]
+        public void A_blank_override_still_falls_back_to_the_store()
+        {
+            using (var dir = new TempDirectory())
+            {
+                var factory = new CredentialFactory(cloud => HostDefaults(), new DpapiSecretStore(dir.Path));
+
+                Assert.Throws<InvalidOperationException>(
+                    () => factory.Create(Spec(DataverseAuthKind.ClientSecret, "missing"), string.Empty));
+            }
+        }
+
         [Fact]
         public void An_options_factory_returning_null_fails_loudly()
         {

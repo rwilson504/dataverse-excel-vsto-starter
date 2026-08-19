@@ -1,5 +1,7 @@
 using System;
 using System.Drawing;
+using System.Threading;
+using System.Threading.Tasks;
 using System.Windows.Forms;
 using DataverseAddIn.Connections;
 using DataverseAddIn.Discovery;
@@ -208,7 +210,7 @@ namespace DataverseAddIn.WinForms
 
         private void OnAddByUrl(object sender, EventArgs e)
         {
-            using (var dialog = new ConnectionDetailsForm())
+            using (var dialog = new ConnectionDetailsForm(null, null, null, tester: Test))
             {
                 if (dialog.ShowDialog(this) != DialogResult.OK || dialog.Environment == null)
                     return;
@@ -235,7 +237,8 @@ namespace DataverseAddIn.WinForms
             }
 
             using (var details = new ConnectionDetailsForm(
-                       DataverseEnvironmentReference.FromInstance(instance), instance.FriendlyName, null))
+                       DataverseEnvironmentReference.FromInstance(instance), instance.FriendlyName, null,
+                       tester: Test))
             {
                 if (details.ShowDialog(this) != DialogResult.OK) return;
 
@@ -254,7 +257,9 @@ namespace DataverseAddIn.WinForms
                        profile.Name,
                        profile.Color,
                        ConnectionAuthentication.FromProfile(profile),
-                       secretAlreadySaved: profile.SecretRef != null))
+                       secretAlreadySaved: profile.SecretRef != null,
+                       tester: (environment, authentication, cancellationToken) =>
+                           _manager.TestAsync(environment, authentication, profile.SecretRef, cancellationToken)))
             {
                 if (dialog.ShowDialog(this) != DialogResult.OK) return;
 
@@ -321,8 +326,14 @@ namespace DataverseAddIn.WinForms
             }
         }
 
-        private bool Confirm(string message) =>
-            MessageBox.Show(this, message, Text, MessageBoxButtons.YesNo, MessageBoxIcon.Question) == DialogResult.Yes;
+        /// <summary>New connections have no saved secret, so only what the dialog holds is used.</summary>
+        private Task<string> Test(
+            DataverseEnvironmentReference environment,
+            ConnectionAuthentication authentication,
+            CancellationToken cancellationToken) =>
+            _manager.TestAsync(environment, authentication, cancellationToken: cancellationToken);
+
+        private bool Confirm(string message) =>            MessageBox.Show(this, message, Text, MessageBoxButtons.YesNo, MessageBoxIcon.Question) == DialogResult.Yes;
 
         protected override void Dispose(bool disposing)
         {

@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
 using System.Drawing;
+using System.Threading;
+using System.Threading.Tasks;
 using System.Windows.Forms;
 using DataverseAddIn.Connections;
 using DataverseAddIn.Discovery;
@@ -27,9 +29,12 @@ namespace DataverseAddIn.WinForms
         private readonly Label _authNotes = new Label { AutoSize = true, MaximumSize = new Size(460, 0) };
         private readonly Dictionary<AuthField, AuthFieldRow> _authFields = new Dictionary<AuthField, AuthFieldRow>();
         private readonly FlowLayoutPanel _swatches = new FlowLayoutPanel();
+        private readonly Button _test = FormScaling.CreateButton("Test connection");
+        private readonly Label _testResult = new Label { AutoSize = true, MaximumSize = new Size(460, 0) };
         private readonly Button _ok = FormScaling.CreateButton("OK", DialogResult.OK);
         private readonly bool _urlIsFixed;
         private readonly bool _secretAlreadySaved;
+        private readonly Func<DataverseEnvironmentReference, ConnectionAuthentication, CancellationToken, Task<string>> _tester;
 
         /// <summary>Manual entry: the user types the URL.</summary>
         public ConnectionDetailsForm() : this(null, null, null)
@@ -42,7 +47,8 @@ namespace DataverseAddIn.WinForms
             string suggestedName,
             string color,
             ConnectionAuthentication authentication = null,
-            bool secretAlreadySaved = false)
+            bool secretAlreadySaved = false,
+            Func<DataverseEnvironmentReference, ConnectionAuthentication, CancellationToken, Task<string>> tester = null)
         {
             this.ApplyScaling();
 
@@ -50,6 +56,7 @@ namespace DataverseAddIn.WinForms
             ColorHex = color ?? Palette[0];
             _urlIsFixed = environment != null;
             _secretAlreadySaved = secretAlreadySaved;
+            _tester = tester;
 
             Text = _urlIsFixed ? "Connection details" : "Add connection by URL";
             FormBorderStyle = FormBorderStyle.FixedDialog;
@@ -94,7 +101,15 @@ namespace DataverseAddIn.WinForms
 
             var cancel = FormScaling.CreateButton("Cancel", DialogResult.Cancel);
 
-            var layout = FormScaling.CreateLayout(2, 8 + _authFields.Count);
+            _test.Visible = _tester != null;
+            _test.Margin = new Padding(0, 6, 0, 0);
+            _test.Click += OnTestAsync;
+
+            _testResult.ForeColor = SystemColors.GrayText;
+            _testResult.Margin = new Padding(0, 4, 0, 0);
+            _testResult.Visible = false;
+
+            var layout = FormScaling.CreateLayout(2, 10 + _authFields.Count);
             layout.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
             layout.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
 
@@ -117,6 +132,8 @@ namespace DataverseAddIn.WinForms
             layout.Controls.Add(FormScaling.CreateLabel("Colour"), 0, row);
             layout.Controls.Add(_swatches, 1, row++);
             layout.Controls.Add(custom, 1, row++);
+            layout.Controls.Add(_test, 1, row++);
+            layout.Controls.Add(_testResult, 1, row++);
             layout.Controls.Add(FormScaling.CreateButtonRow(cancel, _ok), 1, row);
 
             for (var i = 0; i < layout.RowCount; i++)
@@ -339,8 +356,49 @@ namespace DataverseAddIn.WinForms
             UpdateOkState();
         }
 
-        private void UpdateOkState() =>
-            _ok.Enabled = Environment != null && _name.Text.Trim().Length > 0 && RequiredFieldsSupplied();
+        private void UpdateOkState()
+        {
+            var ready = Environment != null && _name.Text.Trim().Length > 0 && RequiredFieldsSupplied();
+
+            _ok.Enabled = ready;
+            _test.Enabled = ready;
+        }
+
+        /// <summary>
+        /// Proves the credential works before it is saved, which for a service principal is the
+        /// difference between finding out now and finding out at connect time.
+        /// </summary>
+        private async void OnTestAsync(object sender, EventArgs e)
+        {
+            if (_tester == null || Environment == null) return;
+
+            _test.Enabled = false;
+            _ok.Enabled = false;
+            Cursor = Cursors.WaitCursor;
+
+            _testResult.Visible = true;
+            _testResult.ForeColor = SystemColors.GrayText;
+            _testResult.Text = "Testing...";
+
+            try
+            {
+                var description = await _tester(Environment, Authentication, CancellationToken.None)
+                    .ConfigureAwait(true);
+
+                _testResult.ForeColor = Color.ForestGreen;
+                _testResult.Text = description;
+            }
+            catch (Exception ex)
+            {
+                _testResult.ForeColor = Color.Firebrick;
+                _testResult.Text = ex.Message;
+            }
+            finally
+            {
+                Cursor = Cursors.Default;
+                UpdateOkState();
+            }
+        }
 
         private static Color SafeColor(string hex)
         {
