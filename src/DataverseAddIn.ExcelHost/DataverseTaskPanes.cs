@@ -21,10 +21,11 @@ namespace DataverseAddIn.ExcelHost
         private const string Title = "Dataverse";
 
         /// <summary>
-        /// Wide enough for an environment URL without wrapping. Office may raise it to its own
-        /// minimum, and caps a docked pane at roughly half the screen.
+        /// Excel opens a docked pane at 432 points on its own, which is too narrow for an
+        /// environment URL. Measured, not guessed — the earlier 320 here made the pane *smaller*
+        /// than Excel's default, which is what "the pane opens tiny" actually was.
         /// </summary>
-        private const int DefaultWidthInPoints = 300;
+        private const int DefaultWidthInPoints = 600;
 
         private readonly Dictionary<int, CustomTaskPane> _panes = new Dictionary<int, CustomTaskPane>();
 
@@ -63,20 +64,24 @@ namespace DataverseAddIn.ExcelHost
         /// </summary>
         private void ApplyDefaultWidth(CustomTaskPane pane)
         {
-            try
-            {
-                pane.Width = DefaultWidthInPoints;
+            var control = pane.Control;
+            if (control == null) return;
 
-                if (pane.Width < DefaultWidthInPoints)
-                {
-                    Report($"Excel set the pane to {pane.Width} points, not the {DefaultWidthInPoints} " +
-                           "requested — it may be restoring a remembered width.");
-                }
-            }
-            catch (Exception ex)
+            // Office finishes laying the pane out after the ribbon callback returns, so ask once
+            // this message has been processed rather than during it.
+            control.BeginInvoke(new Action(() =>
             {
-                Report($"Could not set the pane width: {ex.GetType().Name}: {ex.Message}");
-            }
+                try
+                {
+                    // Widen only. Excel may already have chosen something larger, and shrinking
+                    // a pane the user can see is worse than leaving it alone.
+                    if (pane.Width < DefaultWidthInPoints) pane.Width = DefaultWidthInPoints;
+                }
+                catch (Exception ex)
+                {
+                    Report($"Could not set the pane width: {ex.GetType().Name}: {ex.Message}");
+                }
+            }));
         }
 
         /// <summary>Writes to the pane's log if it exists, so callers need not care whether it is open.</summary>

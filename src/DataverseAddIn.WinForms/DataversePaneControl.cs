@@ -51,6 +51,12 @@ namespace DataverseAddIn.WinForms
                 button.Margin = new Padding(0, 0, 0, 6);
                 button.Width = 0;
                 button.AutoSize = true;
+
+                // BackColor is ambient, so the white background above reaches the buttons and a
+                // Button with an explicit BackColor stops drawing its themed face — a white
+                // button on a white pane. Order matters: assigning BackColor clears this flag.
+                button.BackColor = SystemColors.Control;
+                button.UseVisualStyleBackColor = true;
             }
 
             var layout = new TableLayoutPanel

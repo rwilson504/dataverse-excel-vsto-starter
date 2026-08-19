@@ -1011,3 +1011,31 @@
   Docs describe the API contract; they do not always describe Office's behaviour.
 - Still unproven until the next run: whether 300 points renders wide enough, and whether Office
   restores a remembered width in preference to it.
+
+- Prompts: 26-29
+- Summary: Chased the "task pane opens tiny" symptom through three wrong theories before
+  instrumenting it. Worth recording in full, because the wrong turns share one shape.
+- Theories that were all wrong: (1) `Width` is ignored while the pane is hidden; (2) a
+  `COMException` was being swallowed by the ribbon callback; (3) Office overwrites the width
+  after the callback returns. Each was a story about *why the assignment failed*. None of them
+  questioned whether the assignment was doing the right thing.
+- What instrumentation showed in one run: Excel opens a docked pane at **432 points** of its own
+  accord, and the code was setting **320**. Every version of this, including two of my "fixes",
+  was making the pane *narrower than Excel would have made it unaided*. Deleting the line
+  entirely would have been an improvement.
+- Fix: widen only - `if (pane.Width < DefaultWidthInPoints) pane.Width = DefaultWidthInPoints`
+  at 600 points, never shrinking a pane the user can see. Kept the deferred `BeginInvoke`
+  application, which is harmless and runs when Office has settled.
+- Kept from the dead ends: `OnTogglePane` now has a try/catch. Office really does discard
+  exceptions thrown in ribbon callbacks, so that hole was real even though it was not this bug.
+- Then the widened pane exposed a bug I had introduced earlier: the Connections button rendered
+  as a blank block. **`BackColor` is an ambient property** - setting it on the UserControl for
+  legibility silently propagated to the buttons, and a Button with an explicit `BackColor`
+  abandons visual-styles rendering, so it painted a white face on a white pane. Fixed with
+  `UseVisualStyleBackColor = true`; assignment order matters, because setting `BackColor`
+  clears that flag.
+- Added `tools/verify-pane-control.ps1`, following the `verify-connection-dialog.ps1` pattern:
+  constructs the pane off-screen against a temp store and reports each child''s text, size,
+  colours and theming. Mutation-checked by dropping `UseVisualStyleBackColor` - it fails.
+- Lesson: **three rounds of plausible reasoning lost to one round of measurement.** When a
+  value is not doing what is expected, print the value before theorising about the mechanism.
