@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net462</TargetFramework>
+    <RootNamespace>DataverseAddIn.Connections</RootNamespace>
+    <AssemblyName>DataverseAddIn.Connections</AssemblyName>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\DataverseAddIn.Discovery\DataverseAddIn.Discovery.csproj" />
+    <ProjectReference Include="..\DataverseAddIn.Ingestion\DataverseAddIn.Ingestion.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.PowerPlatform.Dataverse.Client" Version="1.2.26" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- SDK-style net462 projects do not reference this automatically. Needed for DPAPI. -->
+    <Reference Include="System.Security" />
+  </ItemGroup>
+
+</Project>

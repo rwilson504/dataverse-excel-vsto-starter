@@ -1,0 +1,19 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net462</TargetFramework>
+    <RootNamespace>DataverseAddIn.WinForms</RootNamespace>
+    <AssemblyName>DataverseAddIn.WinForms</AssemblyName>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\DataverseAddIn.Connections\DataverseAddIn.Connections.csproj" />
+    <ProjectReference Include="..\DataverseAddIn.Discovery\DataverseAddIn.Discovery.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Reference Include="System.Windows.Forms" />
+    <Reference Include="System.Drawing" />
+  </ItemGroup>
+
+</Project>

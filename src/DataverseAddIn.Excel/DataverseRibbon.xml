@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<customUI xmlns="http://schemas.microsoft.com/office/2009/07/customui" onLoad="OnLoad">
+  <ribbon>
+    <tabs>
+      <tab id="tabDataverse" label="Dataverse">
+        <group id="grpConnection" label="Connection">
+          <button id="btnConnections"
+                  label="Connections"
+                  size="large"
+                  imageMso="ServerConnection"
+                  screentip="Manage Dataverse connections"
+                  supertip="Add a connection by URL or pick an environment from the Global Discovery Service, then connect."
+                  onAction="OnConnections" />
+          <button id="btnWhoAmI"
+                  label="Who Am I"
+                  size="large"
+                  imageMso="AccountSettings"
+                  screentip="Run WhoAmI against the active connection"
+                  getEnabled="GetWhoAmIEnabled"
+                  onAction="OnWhoAmI" />
+        </group>
+      </tab>
+    </tabs>
+  </ribbon>
+</customUI>

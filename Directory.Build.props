@@ -1,0 +1,21 @@
+<Project>
+
+  <PropertyGroup>
+    <LangVersion>latest</LangVersion>
+    <!-- WebView2 on .NET Framework misresolves its native loader unless PlatformTarget is explicit. -->
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
+    <GenerateBindingRedirectsOutputType>true</GenerateBindingRedirectsOutputType>
+    <!-- Emit the full NuGet dependency closure into each library's bin folder, so the
+         VS 2019 VSTO project can reference prebuilt DLLs instead of loading these
+         SDK-style projects. VS 2019's MSBuild 16.11 cannot use the .NET 10 SDK, and
+         .NET 5 has no ARM64 SDK to fall back to. -->
+    <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Lets the .NET SDK build net462 without Visual Studio targeting packs installed. -->
+    <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies" Version="1.0.3" PrivateAssets="all" />
+  </ItemGroup>
+
+</Project>

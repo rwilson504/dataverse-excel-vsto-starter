@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net462</TargetFramework>
+    <RootNamespace>DataverseAddIn.Samples.ConsoleHost</RootNamespace>
+    <AssemblyName>DataverseAddIn.Samples.ConsoleHost</AssemblyName>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\DataverseAddIn.Discovery\DataverseAddIn.Discovery.csproj" />
+    <ProjectReference Include="..\..\src\DataverseAddIn.Connections\DataverseAddIn.Connections.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Reference Include="System.Configuration" />
+    <Reference Include="System.Net.Http" />
+  </ItemGroup>
+
+</Project>

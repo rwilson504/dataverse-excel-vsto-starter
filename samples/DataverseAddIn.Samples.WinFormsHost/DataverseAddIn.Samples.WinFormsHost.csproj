@@ -1,0 +1,22 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net462</TargetFramework>
+    <RootNamespace>DataverseAddIn.Samples.WinFormsHost</RootNamespace>
+    <AssemblyName>DataverseAddIn.Samples.WinFormsHost</AssemblyName>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\DataverseAddIn.WinForms\DataverseAddIn.WinForms.csproj" />
+    <ProjectReference Include="..\..\src\DataverseAddIn.Connections\DataverseAddIn.Connections.csproj" />
+    <ProjectReference Include="..\..\src\DataverseAddIn.Discovery\DataverseAddIn.Discovery.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Reference Include="System.Windows.Forms" />
+    <Reference Include="System.Drawing" />
+    <Reference Include="System.Configuration" />
+  </ItemGroup>
+
+</Project>

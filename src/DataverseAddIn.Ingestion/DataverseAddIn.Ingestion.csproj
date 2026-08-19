@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net462</TargetFramework>
+    <RootNamespace>DataverseAddIn.Ingestion</RootNamespace>
+    <AssemblyName>DataverseAddIn.Ingestion</AssemblyName>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Deliberately only the SDK contracts: no ServiceClient, no MSAL, no auth.
+         The engine takes an IOrganizationService factory so it can be unit tested offline. -->
+    <PackageReference Include="Microsoft.CrmSdk.CoreAssemblies" Version="9.0.2.56" />
+  </ItemGroup>
+
+</Project>

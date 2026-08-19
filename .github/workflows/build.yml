@@ -1,0 +1,37 @@
+name: build
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  build:
+    # Windows is required, not a preference: every project targets net462, the UI is WinForms,
+    # and the secret store uses DPAPI.
+    runs-on: windows-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      # DataverseAddIn.Excel is excluded by the script: VSTO needs the Office/SharePoint
+      # workload in Visual Studio, which hosted runners do not have. -FailOnVstoArtifacts
+      # turns any restore of it into a build failure rather than a silent trap for the next
+      # person to open the solution in Visual Studio.
+      - name: Build, test and verify
+        run: pwsh tools/build-and-test.ps1 -Configuration Release -FailOnVstoArtifacts
+
+      - name: Publish test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: |
+            tests/**/TestResults/**
+          if-no-files-found: ignore

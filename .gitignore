@@ -1,0 +1,28 @@
+## bin / obj
+[Bb]in/
+[Oo]bj/
+
+## User-specific
+*.user
+*.suo
+.vs/
+
+## NuGet
+*.nupkg
+packages/
+
+## Test output
+TestResults/
+*.coverage
+*.coveragexml
+
+## Signing keys. VSTO generates <Project>_TemporaryKey.pfx to sign the ClickOnce manifests.
+## It is a throwaway self-signed key, and a private key does not belong in a repository.
+## Re-enable manifest signing in Visual Studio to regenerate one.
+*.pfx
+*.snk
+
+## OS noise
+Thumbs.db
+Desktop.ini
+.DS_Store
