@@ -27,8 +27,8 @@ The recommendation changed twice, and the reversals are the useful part:
    *per web server*][spr], so spreading requests across servers raises the effective ceiling —
    which is what disabling the Azure affinity cookie does. A browser client **always** has
    server affinity on and cannot turn it off, so a task-pane client is structurally capped
-   against a .NET one. That argued for moving ingestion to a C# backend.
-3. **Then the actual volume arrived: 20,000 rows worst case per load** — and the argument
+   against a .NET one. That argued for moving ingestion to a C# backend.   *(Overstated — corrected 2026-08-20, see the amendment below. The affinity cookie is the
+   only browser-specific limit; `$batch` and `CreateMultiple` are Web API features too.)*3. **Then the actual volume arrived: 20,000 rows worst case per load** — and the argument
    that had driven the whole design collapsed.
 
 I recommended option 3 before knowing the number. That was the mistake: the throughput
@@ -53,6 +53,9 @@ Build the VSTO add-in. No web add-in, no backend service.
   HTML/JS to be served over HTTPS from somewhere. In a GCC High context that hosting, and
   anything that touches customer data, lands inside the compliance boundary. VSTO deploys to
   the workstation and adds nothing to that boundary.
+  *(Half right — corrected 2026-08-20, see the amendment below. The hosting requirement is
+  real and intrinsic, but no customer data passes through that host in a direct
+  task-pane-to-Dataverse design.)*
 - **It reuses everything already built.** `DataverseAddIn.Discovery`, `DataverseAddIn.Connections`,
   `DataverseAddIn.Ingestion` and `DataverseAddIn.WinForms` are all net462 and load in-process. The web route
   would require reimplementing chunking, degree of parallelism, `Retry-After` handling, the
@@ -132,6 +135,90 @@ large batches. That is consistent with the documented behaviour: `ExecuteMultipl
 operations *sequentially on the server*, so a large batch is a long serial run occupying one
 server thread and starving parallelism. The batch exists only to amortize per-request
 overhead.
+
+## Amendment 2026-08-20 — the decision holds, three of its arguments do not
+
+Prompted by a challenge to the throughput reasoning, the claims in this record were checked
+against Microsoft's documentation and against a published implementation of the alternative.
+**The decision does not change. Most of the case for it does.**
+
+### Confirmed
+
+- **`ExecuteMultiple` gains no server-side efficiency.** [Optimize performance for bulk
+  operations][opt] states it verbatim: "Each operation within the request is applied
+  sequentially on the server, so there's no improved efficiency per operation." The strongest
+  claim in 0004 is quotable, not inferred.
+- **Service protection limits** are 6,000 requests and 20 minutes of execution per user in a
+  five-minute sliding window, with a default concurrency ceiling of 52.
+- **Browsers cannot disable server affinity**, and limits apply per server. Both verbatim in
+  [Send parallel requests][par].
+- **Bulk messages want 100–1,000 records** per request for standard tables, 100 for elastic.
+- **A hosted HTTPS endpoint is genuinely unavoidable** for a web add-in. The manifest's
+  `SourceLocation` "must be an HTTPS address, not a file path", and framework choice is
+  irrelevant — React compiles to static files that still need serving.
+
+### Corrected
+
+1. **The throughput argument for VSTO is gone, not merely unnecessary.** `$batch` *and*
+   `CreateMultiple`/`UpdateMultiple`/`UpsertMultiple` are Web API features — the latter as
+   bound actions — and a browser can issue them in parallel. The only browser-specific limit
+   is the affinity cookie, which binds solely near per-server ceilings. At 20k rows it never
+   does. This record framed the gap as structural; it is one narrow mechanism.
+2. **The compliance-boundary framing was too strong.** In a direct task-pane-to-Dataverse
+   design the host serves static assets only; no customer data transits or rests there. The
+   real cost is operational — standing up, securing, patching and monitoring an endpoint, and
+   possibly having code that runs against regulated data reviewed. Whether that is a project
+   or a checkbox depends entirely on what the tenant already has approved.
+3. **`ExecuteMultiple` and `$batch` are not equivalent**, which this record and 0004 both
+   assumed because Microsoft's guidance pairs them. `ExecuteMultiple` runs each operation in
+   its own transaction with `ContinueOnError`. A `$batch` **changeset is atomic**, and supports
+   `Content-ID` referencing — create a parent as `$1`, bind a child to `"$1"` in the same set.
+   That is a real capability the SDK message lacks, and it matters for related rows across
+   sheets. The choice is about transaction shape and error granularity, not speed.
+
+### Strengthened
+
+- **Authentication really is simpler in-process.** Listed under "What we gained" as an
+  assertion; now evidenced. Identity providers refuse to render sign-in pages in an iframe, so
+  a task pane must route through the Office Dialog API — a separate browser instance with its
+  own runtime and no shared storage — and return the token through `messageParent`, which
+  carries only strings or booleans. In practice that is separate login/logout/post-logout
+  pages, extra bundler entries, and state plumbing. Those pages must also be served from the
+  same domain as the task pane, so it compounds with the hosting requirement.
+
+### Under-weighted
+
+**Ongoing friction.** "Machine-level friction for contributors" understates it. Building and
+debugging this add-in has cost: the Office/SharePoint workload unavailable on Windows on ARM
+outside an emulated VS 2019, a code-signing certificate, a build script whose job is partly to
+keep the .NET CLI away from the VSTO project, per-machine registration, and WinForms-specific
+defects that do not exist in a browser. A web add-in has none of it.
+
+### Where this leaves the decision
+
+Unchanged, but resting on **hosting avoidance and sign-in simplicity** rather than throughput,
+compliance surface, and platform capability. Both surviving arguments are real and both are
+environment-dependent.
+
+Stated plainly: **in a tenant with approved static hosting, the web add-in is the better
+choice.** This one holds because of where it runs, not because it is the better platform.
+
+### Prior art
+
+The alternative is not hypothetical. Tae Rim Han has published both halves of it:
+
+- [Let's Bring Dataverse to Excel Using Office Add-ins][tae-addin] — a React/TypeScript task
+  pane calling Dataverse directly, no backend, including the Dialog API sign-in flow.
+- [Execute Web API Batch Operations Without ExecuteMultiple][tae-batch] — composing `$batch`
+  bodies and changesets by hand, with the `Content-ID` referencing examples.
+
+Note that the first does row-by-row CRUD rather than bulk operations, so the browser-side
+throughput path remains untested by either of us.
+
+[opt]: https://learn.microsoft.com/power-apps/developer/data-platform/optimize-performance-create-update
+[par]: https://learn.microsoft.com/power-apps/developer/data-platform/send-parallel-requests
+[tae-addin]: https://taerimhan.com/lets-bring-dataverse-to-excel-using-office-add-ins/
+[tae-batch]: https://taerimhan.com/execute-web-api-batch-operations-without-executemultiple/
 
 The opposite holds for `CreateMultiple`, which processes the set as one optimized unit and
 gets *more* efficient as the set grows.

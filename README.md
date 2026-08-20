@@ -56,15 +56,23 @@ Office project the web add-in is usually the right default — so this needs jus
 
 The recommendation here changed twice. Web add-in first, because it is the modern answer.
 Then a *web add-in with a C# backend*, because Dataverse throttles per web server and a
-browser client can never disable the affinity cookie that pins it to one — a structural
-throughput cap. Then the actual volume arrived: **20,000 rows worst case**, roughly 2% of the
-documented request budget. The argument that had driven the entire design turned out to be
-irrelevant at this scale.
+browser client can never disable the affinity cookie that pins it to one. Then the actual
+volume arrived: **20,000 rows worst case**, roughly 2% of the documented request budget. The
+argument that had driven the entire design turned out to be irrelevant at this scale.
 
-What remained was cost. A web add-in must serve its HTML/JS over HTTPS from somewhere, and in
-a GCC High context that hosting lands inside the compliance boundary. VSTO deploys to the
-workstation and adds nothing to it. It also keeps the ingestion engine as ordinary testable
-C# rather than reimplemented TypeScript.
+It is worth being precise about how far that argument ever went, because this README
+overstated it at first. `$batch` and `CreateMultiple`/`UpdateMultiple` are **Web API features
+too**, and a browser can send them in parallel — the affinity cookie is the only
+browser-specific limit, and it binds only near per-server ceilings.
+
+What remained was hosting. An Office Web Add-in's `SourceLocation` "must be an HTTPS address,
+not a file path", so its markup has to be served from somewhere however it is built. No
+customer data passes through that host in a direct task-pane-to-Dataverse design, so this is
+an operational cost rather than a data-compliance one — but standing up and running an
+endpoint is still a cost, and a larger one in a regulated tenant. Sign-in is also markedly
+fiddlier in a task pane, which must route through the Office Dialog API because identity
+providers refuse to render in an iframe. VSTO needs neither, and keeps the ingestion engine as
+ordinary testable C# rather than reimplemented TypeScript.
 
 **What that cost:** Windows-only — no Excel on Mac, iPad or the web — and no central
 deployment, since VSTO needs a per-machine install and a signing certificate rather than a
@@ -92,8 +100,9 @@ puts two interfaces in the middle — one that produces tokens, one that produce
 so a new authentication kind is an implementation plus a descriptor entry, and **no existing
 consumer changes**.
 
-Interactive and client-secret service principals ship today. The connection dialog renders
-itself from the descriptor table, so new kinds appear in the UI for free.
+Interactive sign-in, client-secret and certificate service principals ship today. The
+connection dialog renders itself from the descriptor table, so new kinds appear in the UI for
+free.
 → [docs/architecture.md](docs/architecture.md) · [decision 0006](decisions/0006-token-source-abstraction.md)
 
 ---
