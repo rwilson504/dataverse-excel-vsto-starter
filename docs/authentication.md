@@ -104,13 +104,21 @@ Per cloud:
 
 **How many registrations you need depends on the clouds you target.** Dynamics 365 GCC uses
 *public* Entra ID; GCC High and DoD require *Microsoft Entra Government*, a physically
-separate directory where a commercial registration is invisible.
+separate directory where a registration you created in commercial Entra is invisible.
 
 | Clouds | Register in | Portal |
 | --- | --- | --- |
 | Commercial + GCC | Public Microsoft Entra ID | `portal.azure.com` |
 | GCC High + DoD | Microsoft Entra Government | `portal.azure.us` |
 | China | Entra operated by 21Vianet | `portal.azure.cn` |
+
+> **That rule applies to registrations you create — not to Microsoft's well-known ones.**
+> Microsoft provisions its documented client IDs in *both* directories, which is why community
+> tooling using the sample client signs in against GCC High with nothing registered. Verify any
+> client ID for yourself with `tools/probe-client-id.ps1`; it needs no credentials, because the
+> device-code endpoint validates the client ID before any sign-in happens. The sample client
+> resolves in both, a freshly generated GUID in neither. Do not read "the sample works there"
+> as "my registration will".
 
 The steps are identical in each portal:
 

@@ -27,10 +27,14 @@ The short answer is no, and the long answer is the reason this repository exists
 - **GCC** authenticates against **public** Microsoft Entra ID. Same registration as commercial,
   same sign-in. Only the Dataverse discovery endpoint and token audience differ.
 - **GCC High** and **DoD** authenticate against **Microsoft Entra Government**, a physically
-  separate directory. A commercial registration is invisible there — "multitenant" does not
-  bridge the two.
-- So the answer to "one registration or two?" is *two*, and which two depends on the clouds
-  you target rather than on how many tenants you have.
+  separate directory. A registration you created in commercial Entra is invisible there —
+  "multitenant" does not bridge the two.
+- So for **your own** registration the answer to "one or two?" is *two*, and which two depends
+  on the clouds you target rather than on how many tenants you have.
+- The exception that confuses everyone: **Microsoft's well-known client IDs are provisioned in
+  both directories.** `tools/probe-client-id.ps1` checks any client ID against both without
+  credentials — the sample client resolves in each, a random GUID in neither. Community tooling
+  working in GCC High is not evidence that your registration will.
 
 That distinction is easy to state and easy to get wrong, because GCC shares the
 `dynamics.com` suffix with commercial and is told apart only by a `crm9` region label. Sending
