@@ -126,9 +126,11 @@ pwsh tools/build-and-test.ps1
 .\samples\DataverseAddIn.Samples.WinFormsHost\bin\Debug\net462\DataverseAddIn.Samples.WinFormsHost.exe
 ```
 
-No credentials or network needed for either. To connect to a real environment you need an
-Entra ID app registration — or, for local experimentation only, Microsoft's published sample
-client ID. See [docs/authentication.md](docs/authentication.md).
+No credentials or network needed for either. To connect to a real environment: **interactive
+sign-in works out of the box** using Microsoft's published sample client ID, which this repo is
+configured with — register your own before shipping. A **client secret or certificate needs
+your own registration**, plus a matching application user in the environment. See
+[docs/authentication.md](docs/authentication.md).
 
 Building the Excel add-in itself needs Visual Studio with the Office/SharePoint workload and a
 locally generated signing key: [docs/vsto.md](docs/vsto.md). VS 2022 is fine on x64; on
