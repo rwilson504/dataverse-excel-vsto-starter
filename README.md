@@ -18,11 +18,17 @@ Targets **.NET Framework 4.6.2**, matching the Dataverse SDK.
 
 ## Where this came from
 
-A friend, Tim, asked a deceptively simple question: **did I know anything about Entra ID app
-registrations, and are they the same across clouds?** He was building something along these
-lines himself.
+A friend, Tim, asked a deceptively simple question: **is the well-known Entra ID app
+registration that community tooling uses available in both the commercial and government
+clouds?** He was building something along these lines himself.
 
-The short answer is no, and the long answer is the reason this repository exists:
+It is — `tools/probe-client-id.ps1` proves it without credentials, because the device-code
+endpoint validates a client ID before any sign-in happens. The sample client resolves against
+both `login.microsoftonline.com` and `login.microsoftonline.us`; a freshly generated GUID is
+rejected by both, which is the control that makes the result mean anything.
+
+Answering it properly is the reason this repository exists, because the surrounding detail is
+where people get burned:
 
 - **GCC** authenticates against **public** Microsoft Entra ID. Same registration as commercial,
   same sign-in. Only the Dataverse discovery endpoint and token audience differ.
@@ -31,10 +37,9 @@ The short answer is no, and the long answer is the reason this repository exists
   "multitenant" does not bridge the two.
 - So for **your own** registration the answer to "one or two?" is *two*, and which two depends
   on the clouds you target rather than on how many tenants you have.
-- The exception that confuses everyone: **Microsoft's well-known client IDs are provisioned in
-  both directories.** `tools/probe-client-id.ps1` checks any client ID against both without
-  credentials — the sample client resolves in each, a random GUID in neither. Community tooling
-  working in GCC High is not evidence that your registration will.
+- **Microsoft's well-known client IDs are the exception, not the rule.** They are provisioned
+  in both directories, which is why the sample client signs into GCC High with nothing
+  registered. Do not read that as evidence that your own registration will.
 
 That distinction is easy to state and easy to get wrong, because GCC shares the
 `dynamics.com` suffix with commercial and is told apart only by a `crm9` region label. Sending
